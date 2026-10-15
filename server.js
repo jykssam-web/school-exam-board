@@ -161,40 +161,20 @@ function getDefaultTimetable45() {
   ];
 }
 
-// 기본 다일차(3일간) 시험 일정 템플릿
+// 기본 시험 일정 템플릿 (1일차 기본 세팅)
 function getDefaultExamDays() {
   const today = new Date();
-  const formatDate = (d) => d.toISOString().split('T')[0];
-
-  const d1 = new Date(today);
-  const d2 = new Date(today); d2.setDate(d2.getDate() + 1);
-  const d3 = new Date(today); d3.setDate(d3.getDate() + 2);
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
 
   return [
     {
       dayIndex: 0,
       name: "1일차",
-      date: formatDate(d1),
+      date: dateStr,
       timetable: getDefaultTimetable45()
-    },
-    {
-      dayIndex: 1,
-      name: "2일차",
-      date: formatDate(d2),
-      timetable: [
-        { period: 1, name: "1교시", startTime: "09:10", endTime: "09:55", grades: { "1": "수학", "2": "국어", "3": "과학" } },
-        { period: 2, name: "2교시", startTime: "10:15", endTime: "11:00", grades: { "1": "사회", "2": "영어", "3": "도덕" } },
-        { period: 3, name: "3교시", startTime: "11:20", endTime: "12:05", grades: { "1": "역사", "2": "한문", "3": "중국어" } }
-      ]
-    },
-    {
-      dayIndex: 2,
-      name: "3일차",
-      date: formatDate(d3),
-      timetable: [
-        { period: 1, name: "1교시", startTime: "09:10", endTime: "09:55", grades: { "1": "영어", "2": "과학", "3": "수학" } },
-        { period: 2, name: "2교시", startTime: "10:15", endTime: "11:00", grades: { "1": "미술", "2": "음악", "3": "체육" } }
-      ]
     }
   ];
 }

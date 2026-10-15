@@ -23,6 +23,7 @@ let simulatedTimeOffsetMs = null;
 let settingsEditingDays = [];
 let currentSettingsDayIndex = 0;
 let settingsDuration = 45;
+let day2WarningShown = false;
 
 // ==============================================================
 // 1. 초기화 및 테마 설정
@@ -97,6 +98,19 @@ function checkUrlParamsForAutoJoin() {
   const adminCodeParam = params.get('adminCode');
   const schoolParam = params.get('school');
 
+  const simTimeParam = params.get('simTime');
+  if (simTimeParam) {
+    const [hh, mm] = simTimeParam.split(':').map(Number);
+    const target = new Date();
+    target.setHours(hh, mm, 0, 0);
+    simulatedTimeOffsetMs = target.getTime() - Date.now();
+  }
+
+  const tabParam = params.get('tab');
+  if (tabParam) {
+    switchLobbyTab(tabParam);
+  }
+
   if (codeParam) {
     switchLobbyTab('code');
     const input = document.getElementById('enterRoomCodeInput');
@@ -112,6 +126,13 @@ function checkUrlParamsForAutoJoin() {
     const input = document.getElementById('adminRoomCodeInput');
     if (input) {
       input.value = adminCodeParam.trim();
+      const passParam = params.get('pass');
+      if (passParam) {
+        const passInput = document.getElementById('adminPasswordInput');
+        if (passInput) passInput.value = passParam.trim();
+        handleEnterByCode('teacher');
+        return;
+      }
       document.getElementById('adminPasswordInput')?.focus();
       return;
     }
@@ -434,6 +455,22 @@ function enterExamBoard(school, role, passwords = {}) {
   currentSchool = school;
   currentRole = role;
   teacherPreviewMode = false;
+
+  if (new URLSearchParams(window.location.search).get('sampleNotice') === '1') {
+    currentSchool.notices = [
+      {
+        id: 'sample-01',
+        period: 1,
+        periodName: '1교시',
+        grade: '2',
+        subject: '수학',
+        content: '5번 문항 보기 ③번 오타 수정: x² + 2x + 1 → x² - 2x + 1 로 수정하여 풀어주세요.',
+        createdAt: '09:25:10',
+        endTime: '10:00',
+        teacher: '수학교사'
+      }
+    ];
+  }
 
   document.getElementById('lobbyView').classList.add('hidden');
   document.getElementById('examBoardView').classList.remove('hidden');
@@ -787,6 +824,21 @@ function renderHeroSubjects() {
 
 function renderNotices() {
   if (!currentSchool) return;
+  if (new URLSearchParams(window.location.search).get('sampleNotice') === '1' && (!currentSchool.notices || currentSchool.notices.length === 0)) {
+    currentSchool.notices = [
+      {
+        id: 'sample-01',
+        period: 1,
+        periodName: '1교시',
+        grade: '2',
+        subject: '수학',
+        content: '5번 문항 보기 ③번 오타 수정: x² + 2x + 1 → x² - 2x + 1 로 수정하여 풀어주세요.',
+        createdAt: '09:25:10',
+        endTime: '10:00',
+        teacher: '수학교사'
+      }
+    ];
+  }
   const allNotices = currentSchool.notices || [];
 
   const commonNotice = allNotices.find(n => n.grade === 'all');
@@ -1092,6 +1144,7 @@ function updateClockAndTimer() {
 }
 
 function filterExpiredNoticesLocally(now) {
+  if (simulatedTimeOffsetMs !== null) return;
   if (!currentSchool || !currentSchool.notices) return;
   const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   let hasExpired = false;
@@ -1137,6 +1190,7 @@ function openSettingsModal() {
   
   settingsDuration = currentSchool.defaultDuration || 50;
   updateDurationButtonsUI();
+  day2WarningShown = false;
 
   // 깊은 복사로 편집 데이터 준비
   if (currentSchool.days && currentSchool.days.length > 0) {
@@ -1254,6 +1308,13 @@ function renderSettingsDayTabs() {
 function switchSettingsDayTab(idx) {
   // 현재 작업 중이던 테이블 내용 저장
   saveCurrentTableToMemory();
+
+  // 2일차 세팅으로 넘어갈 때 주말/공휴일 날짜 확인 경고
+  if (idx === 1 && !day2WarningShown) {
+    alert('간혹 주말이나 공휴일을 끼고 시험을 보는 경우도 있으니, 2일차 시험 날짜가 맞는지 꼭 확인하세요!');
+    day2WarningShown = true;
+  }
+
   currentSettingsDayIndex = idx;
   renderSettingsDayTabs();
   loadCurrentSettingsDayTable();
@@ -1266,17 +1327,32 @@ function addNewDayTab() {
   let nextDateStr = new Date().toISOString().split('T')[0];
 
   if (prevDate) {
-    const d = new Date(prevDate);
-    d.setDate(d.getDate() + 1);
-    nextDateStr = d.toISOString().split('T')[0];
+    const parts = prevDate.split('-').map(Number);
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      nextDateStr = `${y}-${m}-${day}`;
+    }
   }
 
-  // 1일차 구조 복사하여 새 일차 생성
-  const templateTable = [
-    { period: 1, name: "1교시", startTime: "09:10", endTime: calculateEndTime("09:10", settingsDuration), grades: { "1": "", "2": "", "3": "" } },
-    { period: 2, name: "2교시", startTime: "10:15", endTime: calculateEndTime("10:15", settingsDuration), grades: { "1": "", "2": "", "3": "" } },
-    { period: 3, name: "3교시", startTime: "11:20", endTime: calculateEndTime("11:20", settingsDuration), grades: { "1": "", "2": "", "3": "" } }
-  ];
+  // 1일차 구조 복사하여 새 일차 생성 (1일차 시작/종료시간 및 교시 유지)
+  const baseTimetable = (settingsEditingDays[0] && settingsEditingDays[0].timetable) || [];
+  const templateTable = baseTimetable.length > 0
+    ? baseTimetable.map(p => ({
+        period: p.period,
+        name: p.name,
+        startTime: p.startTime,
+        endTime: p.endTime,
+        grades: { "1": "", "2": "", "3": "" }
+      }))
+    : [
+        { period: 1, name: "1교시", startTime: "09:10", endTime: calculateEndTime("09:10", settingsDuration), grades: { "1": "", "2": "", "3": "" } },
+        { period: 2, name: "2교시", startTime: "10:15", endTime: calculateEndTime("10:15", settingsDuration), grades: { "1": "", "2": "", "3": "" } },
+        { period: 3, name: "3교시", startTime: "11:20", endTime: calculateEndTime("11:20", settingsDuration), grades: { "1": "", "2": "", "3": "" } }
+      ];
 
   settingsEditingDays.push({
     dayIndex: nextIdx,
@@ -1284,6 +1360,12 @@ function addNewDayTab() {
     date: nextDateStr,
     timetable: templateTable
   });
+
+  // 2일차 추가 시 주말/공휴일 확인 경고
+  if (nextIdx === 1) {
+    alert('간혹 주말이나 공휴일을 끼고 시험을 보는 경우도 있으니, 2일차 시험 날짜가 맞는지 꼭 확인하세요!');
+    day2WarningShown = true;
+  }
 
   currentSettingsDayIndex = nextIdx;
   renderSettingsDayTabs();
@@ -1320,6 +1402,15 @@ function loadCurrentSettingsDayTable() {
 
   document.getElementById('currentDayNameInput').value = currentDay.name || '';
   document.getElementById('currentDayDateInput').value = currentDay.date || '';
+
+  const weekendNotice = document.getElementById('dayWeekendNotice');
+  if (weekendNotice) {
+    if (currentSettingsDayIndex >= 1) {
+      weekendNotice.classList.remove('hidden');
+    } else {
+      weekendNotice.classList.add('hidden');
+    }
+  }
 
   const timetable = currentDay.timetable || [];
   const tbody = document.getElementById('periodTableBody');
