@@ -259,32 +259,40 @@ function isExpired(endTimeStr) {
   const now = new Date();
   const [endH, endM] = endTimeStr.split(':').map(Number);
   const endDateTime = new Date();
-  endDateTime.setHours(endH, endM, 0, 0);
+  // 10:45 종료 시험인 경우, 10시 45분 59초까지 유지되고 10시 46분 00초(endM + 1)가 되는 순간 만료
+  endDateTime.setHours(endH, endM + 1, 0, 0);
   return now.getTime() >= endDateTime.getTime();
 }
 
-// 전체 학교의 만료된 정정사항 주기적 자동 정리
+// 전체 학교의 만료된 정정사항 주기적 자동 정리 (1초 주기)
 function cleanupAllSchoolsExpiredNotices() {
   let changed = false;
 
   Object.values(db.schools).forEach(school => {
-    const beforeCount = school.notices.length;
-    // 현재 진행 중인 일차의 시간표 조회
-    const currentDay = school.days ? school.days[school.currentDayIndex || 0] : null;
+    const beforeCount = (school.notices || []).length;
+    // 현재 진행 중인 일차의 시간표 조회 (오늘 날짜와 일치하는 일차 우선 탐색)
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    let currentDay = null;
+    if (school.days && school.days.length > 0) {
+      const todayDay = school.days.find(d => d.date === todayStr);
+      currentDay = todayDay || school.days[school.currentDayIndex || 0];
+    }
     const timetable = currentDay ? currentDay.timetable : (school.timetable || []);
 
-    school.notices = school.notices.filter(notice => {
+    school.notices = (school.notices || []).filter(notice => {
       const periodObj = timetable.find(p => p.period === Number(notice.period));
-      if (periodObj && periodObj.endTime) {
-        if (isExpired(periodObj.endTime)) {
-          console.log(`[${school.name} 자동삭제] ${notice.period}교시(${periodObj.endTime}) 종료 경과: ${notice.content}`);
+      const endTime = (periodObj && periodObj.endTime) || notice.endTime;
+      if (endTime) {
+        if (isExpired(endTime)) {
+          console.log(`[${school.name} 자동삭제] ${notice.period}교시(${endTime}) 종료 후 1분 경과: ${notice.content}`);
           return false;
         }
       }
       return true;
     });
 
-    if (school.notices.length !== beforeCount) {
+    if ((school.notices || []).length !== beforeCount) {
       changed = true;
       io.to(school.id).emit('room_state_update', publicSchool(school));
     }
@@ -295,7 +303,7 @@ function cleanupAllSchoolsExpiredNotices() {
   }
 }
 
-setInterval(cleanupAllSchoolsExpiredNotices, 10000);
+setInterval(cleanupAllSchoolsExpiredNotices, 1000);
 
 // 시험일로부터 7일 경과한 학교 시험상황실 자동 파기 루틴
 function cleanupOldSchools() {
@@ -612,7 +620,13 @@ io.on('connection', (socket) => {
     const school = db.schools[schoolId];
     if (!school || !noticeData) return;
 
-    const currentDay = school.days ? school.days[school.currentDayIndex || 0] : null;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    let currentDay = null;
+    if (school.days && school.days.length > 0) {
+      const todayDay = school.days.find(d => d.date === todayStr);
+      currentDay = todayDay || school.days[school.currentDayIndex || 0];
+    }
     const timetable = currentDay ? currentDay.timetable : (school.timetable || []);
     const periodObj = timetable.find(p => p.period === Number(noticeData.period));
 
@@ -637,10 +651,11 @@ io.on('connection', (socket) => {
       content: sanitizedContent,
       imageUrl: (noticeData.imageUrl && typeof noticeData.imageUrl === 'string' && noticeData.imageUrl.startsWith('data:image/')) ? noticeData.imageUrl : null,
       createdAt: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-      endTime: periodObj ? periodObj.endTime : null,
+      endTime: periodObj ? periodObj.endTime : (noticeData.endTime || null),
       teacher: sanitizedTeacher
     };
 
+    if (!school.notices) school.notices = [];
     school.notices.unshift(newNotice);
     saveDatabase();
 

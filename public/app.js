@@ -484,6 +484,21 @@ function enterExamBoard(school, role, passwords = {}) {
   if (roomCodeBadge) {
     roomCodeBadge.innerText = `코드: ${school.roomCode || '------'}`;
   }
+  // 오늘 날짜와 일치하는 시험 일차가 있다면 자동으로 해당 일차 선택
+  if (school.days && school.days.length > 0) {
+    const now = getNow();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    const todayIdx = school.days.findIndex(day => day.date === todayStr);
+    if (todayIdx !== -1 && school.currentDayIndex !== todayIdx) {
+      school.currentDayIndex = todayIdx;
+      if (role === 'teacher') {
+        api.changeDay(school.id, todayIdx);
+      }
+    }
+  }
 
   updateHeaderDaySelector();
 
@@ -760,11 +775,23 @@ api.onNoticeBroadcast(({ notice, allNotices }) => {
   }
 });
 
-// 현재 활성화된 일차의 시간표 가져오기
+// 현재 활성화된 일차의 시간표 가져오기 (오늘 날짜 일차 우선 확인)
 function getCurrentActiveTimetable() {
   if (!currentSchool) return [];
   const days = currentSchool.days || [];
-  const idx = currentSchool.currentDayIndex || 0;
+  if (days.length === 0) return currentSchool.timetable || [];
+
+  let idx = currentSchool.currentDayIndex || 0;
+  const now = getNow();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
+  const todayIdx = days.findIndex(day => day.date === todayStr);
+  if (todayIdx !== -1 && (currentSchool.currentDayIndex === undefined || currentSchool.currentDayIndex === 0)) {
+    idx = todayIdx;
+  }
+
   if (days[idx] && days[idx].timetable) {
     return days[idx].timetable;
   }
@@ -1144,7 +1171,6 @@ function updateClockAndTimer() {
 }
 
 function filterExpiredNoticesLocally(now) {
-  if (simulatedTimeOffsetMs !== null) return;
   if (!currentSchool || !currentSchool.notices) return;
   const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   let hasExpired = false;
@@ -1152,9 +1178,12 @@ function filterExpiredNoticesLocally(now) {
 
   currentSchool.notices = currentSchool.notices.filter(notice => {
     const periodObj = timetable.find(p => p.period === Number(notice.period));
-    if (periodObj && periodObj.endTime) {
-      const [eH, eM] = periodObj.endTime.split(':').map(Number);
-      if (currentMinutes >= (eH * 60 + eM)) {
+    const endTime = (periodObj && periodObj.endTime) || notice.endTime;
+    if (endTime) {
+      const [eH, eM] = endTime.split(':').map(Number);
+      // 10:45 종료 시험이면 10시 45분 59초까지 유지되고 10시 46분 00초(eH * 60 + eM + 1)가 되는 순간 삭제
+      const expireMinutes = eH * 60 + eM + 1;
+      if (currentMinutes >= expireMinutes) {
         hasExpired = true;
         return false;
       }
@@ -1164,6 +1193,7 @@ function filterExpiredNoticesLocally(now) {
 
   if (hasExpired) {
     renderNotices();
+    renderTeacherNotices();
   }
 }
 
@@ -1656,16 +1686,89 @@ function closeNoticeModal() {
   removeNoticeImage();
 }
 
+// 현재 시각에 맞춰 진행 중인 교시 또는 다음 교시 자동 탐색
+function findCurrentPeriod(timetable) {
+  if (!timetable || timetable.length === 0) return null;
+  const now = getNow();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+  // 1. 현재 진행 중인 교시 탐색 (startMins <= currentMinutes < endMins + 1)
+  // 예: 10:00 ~ 10:45 이면 10:45:59까지 2교시 진행 중으로 인정
+  for (const item of timetable) {
+    if (!item.startTime || !item.endTime) continue;
+    const [sH, sM] = item.startTime.split(':').map(Number);
+    const [eH, eM] = item.endTime.split(':').map(Number);
+    const startMins = sH * 60 + sM;
+    const endMins = eH * 60 + eM + 1;
+    if (currentMinutes >= startMins && currentMinutes < endMins) {
+      return { item, status: 'in_progress' };
+    }
+  }
+
+  // 2. 쉬는 시간 또는 시험 시작 전: 가장 가까운 다음 교시 탐색
+  for (const item of timetable) {
+    if (!item.startTime) continue;
+    const [sH, sM] = item.startTime.split(':').map(Number);
+    const startMins = sH * 60 + sM;
+    if (currentMinutes < startMins) {
+      return { item, status: 'upcoming' };
+    }
+  }
+
+  // 3. 당일 모든 시험이 종료된 후: 마지막 교시
+  return { item: timetable[timetable.length - 1], status: 'ended' };
+}
+
 function populateNoticePeriods() {
   const select = document.getElementById('noticePeriodSelect');
+  const badge = document.getElementById('noticePeriodAutoBadge');
+  const hint = document.getElementById('noticePeriodHint');
   const timetable = getCurrentActiveTimetable();
+
   if (timetable.length === 0) {
     select.innerHTML = '<option value="1">1교시</option>';
+    if (badge) badge.innerText = '';
+    if (hint) hint.innerText = '';
     return;
   }
-  select.innerHTML = timetable.map(item => `
-    <option value="${item.period}">${item.name} (${item.startTime} ~ ${item.endTime})</option>
-  `).join('');
+
+  const detected = findCurrentPeriod(timetable);
+  const targetPeriod = detected ? detected.item.period : timetable[0].period;
+
+  select.innerHTML = timetable.map(item => {
+    let suffix = '';
+    if (detected && detected.item.period === item.period) {
+      if (detected.status === 'in_progress') suffix = ' (⚡현재 진행중)';
+      else if (detected.status === 'upcoming') suffix = ' (⏳다음 시험)';
+    }
+    return `<option value="${item.period}">${item.name} (${item.startTime} ~ ${item.endTime})${suffix}</option>`;
+  }).join('');
+
+  select.value = targetPeriod;
+
+  if (badge) {
+    if (detected && detected.status === 'in_progress') {
+      badge.className = "text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200";
+      badge.innerText = `현재 ${detected.item.name} 자동 감지`;
+    } else if (detected && detected.status === 'upcoming') {
+      badge.className = "text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200";
+      badge.innerText = `다음 ${detected.item.name} 자동 감지`;
+    } else {
+      badge.className = "text-[10px] font-bold text-slate-500";
+      badge.innerText = '(자동 선택)';
+    }
+  }
+
+  if (hint && detected) {
+    const end = detected.item.endTime || '';
+    if (end) {
+      const [eH, eM] = end.split(':').map(Number);
+      const nextMinuteStr = `${String(eH).padStart(2, '0')}:${String(eM + 1).padStart(2, '0')}:00`;
+      hint.innerHTML = `<span class="text-blue-600 font-bold">⚡ 현재 시각에 맞춰 [${detected.item.name}]가 자동 선택되었습니다.</span> 시험 종료 후(<span class="font-bold text-red-600">${end}</span> 직후 <span class="font-bold text-red-600">${nextMinuteStr}</span>) 전 교실 화면에서 자동 삭제됩니다.`;
+    } else {
+      hint.innerText = `현재 시각에 맞춰 [${detected.item.name}]가 자동 선택되었습니다.`;
+    }
+  }
 }
 
 function onNoticeGradeChange() {
@@ -1687,6 +1790,22 @@ function onNoticeGradeChange() {
 
 function onNoticePeriodChange() {
   onNoticeGradeChange();
+  const select = document.getElementById('noticePeriodSelect');
+  const badge = document.getElementById('noticePeriodAutoBadge');
+  const hint = document.getElementById('noticePeriodHint');
+  const timetable = getCurrentActiveTimetable();
+  const periodVal = Number(select?.value || 1);
+  const periodObj = timetable.find(p => p.period === periodVal);
+
+  if (badge) {
+    badge.className = "text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200";
+    badge.innerText = `선생님 직접 선택`;
+  }
+  if (hint && periodObj && periodObj.endTime) {
+    const [eH, eM] = periodObj.endTime.split(':').map(Number);
+    const nextMinuteStr = `${String(eH).padStart(2, '0')}:${String(eM + 1).padStart(2, '0')}:00`;
+    hint.innerHTML = `선택하신 [${periodObj.name}] 시험 종료 후(<span class="font-bold text-red-600">${periodObj.endTime}</span> 직후 <span class="font-bold text-red-600">${nextMinuteStr}</span>) 전 교실 화면에서 자동 삭제됩니다.`;
+  }
 }
 
 function applyTemplate(type) {
@@ -1726,11 +1845,16 @@ function handleNoticeSubmit(e) {
     return;
   }
 
+  const timetable = getCurrentActiveTimetable();
+  const periodObj = timetable.find(p => p.period === Number(period));
+
   api.addNotice(currentSchool.id, {
     grade,
     period,
+    periodName: periodObj ? periodObj.name : `${period}교시`,
     subject,
     content,
+    endTime: periodObj ? periodObj.endTime : null,
     imageUrl: currentNoticeImageBase64, // 1장 사진 전송
     teacher: '출제교사'
   });
