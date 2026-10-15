@@ -1,0 +1,373 @@
+<!-- ============================================================== -->
+<!-- Life for Teacher [실시간 시험상황실] 워드프레스 소개 페이지 콘텐츠 -->
+<!-- 워드프레스 [페이지 새로 추가] -> [사용자 정의 HTML] 블록에 그대로 붙여넣으세요 -->
+<!-- ============================================================== -->
+
+<style>
+/* LFT 고유 디자인 토큰 기반 스타일 */
+.lft-exam-intro {
+  --lft-navy-deep: #081c2f;
+  --lft-brand: #1c4263;
+  --lft-brand-soft: #e9eef3;
+  --lft-gold: #b88a38;
+  --lft-accent: #ddb867;
+  --lft-paper: #f5f1e8;
+  --lft-text-main: #142131;
+  --lft-text-muted: #5e6b76;
+  --lft-border: #d8d0c1;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--lft-text-main);
+  line-height: 1.6;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+}
+
+/* 히어로 배너 */
+.lft-hero {
+  background: linear-gradient(145deg, #081c2f 0%, #102b46 100%);
+  color: #ffffff;
+  border-radius: 24px;
+  padding: 50px 36px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(8, 28, 47, 0.12);
+}
+
+.lft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(221, 184, 103, 0.15);
+  border: 1px solid rgba(221, 184, 103, 0.4);
+  color: var(--lft-accent);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+.lft-hero h1 {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.3;
+  margin: 0 0 16px 0;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.lft-hero p {
+  font-size: 17px;
+  color: #b0c4de;
+  margin: 0 0 32px 0;
+  max-width: 680px;
+  word-break: keep-all;
+}
+
+.lft-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.lft-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--lft-accent);
+  color: #081c2f !important;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 14px 28px;
+  border-radius: 14px;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(221, 184, 103, 0.3);
+}
+
+.lft-btn-primary:hover {
+  background: #ecd18e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(221, 184, 103, 0.4);
+}
+
+.lft-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+}
+
+.lft-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 문제 해결 비교 카드 */
+.lft-section-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 40px 0 20px;
+  color: var(--lft-navy-deep);
+  letter-spacing: -0.5px;
+}
+
+.lft-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+  .lft-hero { padding: 36px 20px; }
+  .lft-hero h1 { font-size: 26px; }
+  .lft-compare-grid { grid-template-columns: 1fr; }
+}
+
+.lft-card-before {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.lft-card-after {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.lft-card-tag {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.lft-card-before .lft-card-tag { background: #fee2e2; color: #991b1b; }
+.lft-card-after .lft-card-tag { background: #dcfce7; color: #166534; }
+
+.lft-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+
+/* 4대 특징 그리드 */
+.lft-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.lft-feature-box {
+  background: #ffffff;
+  border: 1px solid var(--lft-border);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 4px 12px rgba(21, 51, 74, 0.04);
+}
+
+.lft-feature-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.lft-feature-box h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: var(--lft-navy-deep);
+}
+
+.lft-feature-box p {
+  font-size: 13.5px;
+  color: var(--lft-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 3단계 시작 가이드 */
+.lft-step-container {
+  background: var(--lft-paper);
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 40px;
+}
+
+.lft-step-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.lft-step-item:last-child { margin-bottom: 0; }
+
+.lft-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--lft-brand);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  shrink: 0;
+}
+
+/* 하단 CTA 배너 */
+.lft-bottom-banner {
+  text-align: center;
+  background: var(--lft-brand-soft);
+  border: 1px solid #ccd8e4;
+  border-radius: 20px;
+  padding: 40px 20px;
+}
+
+.lft-bottom-banner h2 {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--lft-navy-deep);
+  margin: 0 0 10px;
+}
+
+.lft-bottom-banner p {
+  color: var(--lft-text-muted);
+  font-size: 15px;
+  margin: 0 0 24px;
+}
+</style>
+
+<div class="lft-exam-intro">
+
+  <!-- 1. 히어로 메인 배너 -->
+  <div class="lft-hero">
+    <div class="lft-badge">✨ 전국 학교 실시간 시험상황실</div>
+    <h1>시험 문제 정정사항,<br>이제 교실마다 뛰어다니지 마세요.</h1>
+    <p>
+      교무실에서 1번만 입력하면, 각 교실 전자칠판으로 0.1초 만에 딩동 알림음과 붉은 번쩍임으로 실시간 전송됩니다. 설치 없이 웹 브라우저에서 바로 사용합니다.
+    </p>
+    <div class="lft-btn-group">
+      <!-- 실제 시험상황실 주소 연결 (배포 후 주소로 자동 연결) -->
+      <a href="https://exam.lifeforteacher.com" target="_blank" class="lft-btn-primary">
+        <span>우리 학교 시험실 개설하기</span>
+        <span>→</span>
+      </a>
+      <a href="https://exam.lifeforteacher.com" target="_blank" class="lft-btn-secondary">
+        <span>교실 전자칠판 6자리 코드 입장</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. 교실 현장 전후 비교 -->
+  <h2 class="lft-section-title">시험 날, 이렇게 달라집니다</h2>
+  <div class="lft-compare-grid">
+    <div class="lft-card-before">
+      <span class="lft-card-tag">기존의 시험 날</span>
+      <h3 class="lft-card-title text-red-800">🏃 교실마다 뛰어다니는 전달</h3>
+      <p style="font-size: 14px; color: #7f1d1d; margin: 0; line-height: 1.6;">
+        • 문제 오류 발견 시 메신저 전송 또는 인쇄 후 1반부터 10반까지 뛰어다님<br>
+        • 앞반과 뒷반의 정정사항 전달 시간 차이 발생<br>
+        • 학생이 문제 풀이에 집중하느라 정정사항을 놓치고 지나침
+      </p>
+    </div>
+    <div class="lft-card-after">
+      <span class="lft-card-tag">시험상황실 도입 후</span>
+      <h3 class="lft-card-title text-emerald-800">⚡ 0.1초 동시 화면 번쩍임 전송</h3>
+      <p style="font-size: 14px; color: #14532d; margin: 0; line-height: 1.6;">
+        • 교무실에서 입력 즉시 모든 교실 칠판에 소리와 빨간 펄스 효과 팝업<br>
+        • 문제지 오류 글자뿐만 아니라 칠판 판서 사진도 즉시 공유<br>
+        • 교시가 끝나면 해당 교시 정정사항이 알아서 자동 삭제
+      </p>
+    </div>
+  </div>
+
+  <!-- 3. 핵심 기능 4가지 -->
+  <h2 class="lft-section-title">선생님들이 가장 만족하는 4가지</h2>
+  <div class="lft-feature-grid">
+    <div class="lft-feature-box">
+      <div class="lft-feature-icon">🔢</div>
+      <h3>회원가입·설치 제로</h3>
+      <p>프로그램 설치나 회원가입 없이, 6자리 숫자 코드만 메신저로 전달하면 각 교실에서 즉시 열립니다.</p>
+    </div>
+    <div class="lft-feature-box">
+      <div class="lft-feature-icon">📺</div>
+      <h3>교실 맞춤 1페이지 전광판</h3>
+      <p>현재 시각, 교시 남은 시간 대형 카운트다운과 함께 우리 반 학년만 크게 볼 수 있는 학년 가리기를 지원합니다.</p>
+    </div>
+    <div class="lft-feature-box">
+      <div class="lft-feature-icon">🧹</div>
+      <h3>자동 정리 & 영구 파기</h3>
+      <p>교시가 종료되면 해당 교시 정정사항이 자동 삭제되며, 시험 종료 7일 후 학교 시험실 데이터가 영구 파기됩니다.</p>
+    </div>
+    <div class="lft-feature-box">
+      <div class="lft-feature-icon">🔒</div>
+      <h3>철저한 학교별 보안 격리</h3>
+      <p>전국 학교가 완전히 독립된 룸으로 격리되며, 비밀번호 5회 오류 시 15분 접속 차단 및 교사 전용 세션 토큰으로 안전합니다.</p>
+    </div>
+  </div>
+
+  <!-- 4. 이용 가이드 (초간단 3단계) -->
+  <div class="lft-step-container">
+    <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 20px; color: var(--lft-navy-deep);">
+      💡 우리 학교에서 사용하는 초간단 3단계
+    </h3>
+    <div class="lft-step-item">
+      <div class="lft-step-num">1</div>
+      <div>
+        <strong style="color: var(--lft-navy-deep);">시험실 개설 및 코드 발급</strong>
+        <p style="font-size: 13.5px; color: var(--lft-text-muted); margin: 4px 0 0;">
+          연구부장 또는 출제 교사가 학교 이름과 비밀번호를 정해 시험실을 개설하면 6자리 고유 코드가 발급됩니다.
+        </p>
+      </div>
+    </div>
+    <div class="lft-step-item">
+      <div class="lft-step-num">2</div>
+      <div>
+        <strong style="color: var(--lft-navy-deep);">교내 메신저로 원클릭 링크 공유</strong>
+        <p style="font-size: 13.5px; color: var(--lft-text-muted); margin: 4px 0 0;">
+          [📋 칠판 링크 복사] 또는 [💬 메신저 공지문 복사] 버튼을 눌러 쿨메신저/티셀파 전체 쪽지로 발송합니다.
+        </p>
+      </div>
+    </div>
+    <div class="lft-step-item">
+      <div class="lft-step-num">3</div>
+      <div>
+        <strong style="color: var(--lft-navy-deep);">각 교실 전자칠판에서 전체화면(F11) 실행</strong>
+        <p style="font-size: 13.5px; color: var(--lft-text-muted); margin: 4px 0 0;">
+          담임 또는 감독 교사가 교실 컴퓨터에서 링크를 열고 키보드 F11을 누르면 실시간 칠판 모드가 완성됩니다.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 하단 CTA -->
+  <div class="lft-bottom-banner">
+    <h2>이번 중간고사·기말고사, 우리 학교도 1분 만에 시작해보세요</h2>
+    <p>전국의 모든 초·중·고등학교 선생님들께 무료로 제공됩니다.</p>
+    <a href="https://exam.lifeforteacher.com" target="_blank" class="lft-btn-primary" style="font-size: 17px; padding: 15px 36px;">
+      <span>우리 학교 시험실 개설하기</span>
+      <span>→</span>
+    </a>
+  </div>
+
+</div>

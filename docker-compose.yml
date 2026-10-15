@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  school-exam-board:
+    build: .
+    container_name: school-exam-board
+    restart: always
+    ports:
+      - "3019:3019"
+    environment:
+      - PORT=3019
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data

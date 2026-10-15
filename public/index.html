@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>전국 학교 실시간 시험상황실 | LifeForTeacher.com</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Pretendard Korean Gothic Web Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.468.0"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="light-theme min-h-screen flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200">
+
+  <!-- ============================================================== -->
+  <!-- 1. LOBBY VIEW (홈페이지 진입 포털: 코드 입장 & 관리자 & 개설) -->
+  <!-- ============================================================== -->
+  <div id="lobbyView" class="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-100">
+    <div class="max-w-xl w-full mx-auto flex flex-col items-center">
+      
+      <!-- 브랜드 로고 -->
+      <div class="flex items-center gap-3 mb-2">
+        <div class="p-3 bg-blue-600 border border-blue-500 rounded-2xl text-white shadow-lg">
+          <i data-lucide="school" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <div class="text-xs font-bold tracking-widest text-blue-600 uppercase">LifeForTeacher.com</div>
+          <h1 class="text-2xl md:text-3xl font-black tracking-tight text-slate-900">전국 학교 실시간 시험상황실</h1>
+        </div>
+      </div>
+      <p class="text-sm text-slate-600 text-center mb-5">
+        교실 전자칠판으로 시험 문제 정정사항과 시간표를 실시간 전송합니다.
+      </p>
+
+      <!-- 📌 관리자/교사용 최근 방문 시험실 바로가기 배너 (있을 때 자동 노출) -->
+      <div id="recentSchoolBanner" class="hidden w-full mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-blue-600 text-white rounded-xl">
+            <i data-lucide="bookmark-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold text-blue-600">최근 내가 접속한 시험실</div>
+            <div class="text-base font-black text-slate-900" id="recentSchoolName">-</div>
+            <div class="text-xs text-slate-500 font-mono font-bold" id="recentSchoolInfo">코드: ------</div>
+          </div>
+        </div>
+        <button onclick="enterRecentSchool()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+          <span>바로 입장</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- 카드 컨테이너 -->
+      <div class="w-full bg-white border border-slate-300 rounded-3xl shadow-xl p-6">
+        
+        <!-- 3개 탭 버튼 (교실 코드 입장 / 관리자 로그인 / 새 학교 개설) -->
+        <div class="grid grid-cols-3 gap-1.5 p-1.5 bg-slate-100 border border-slate-200 rounded-2xl mb-6 text-xs font-bold">
+          <button id="tabCodeBtn" onclick="switchLobbyTab('code')" class="py-2.5 rounded-xl transition bg-blue-600 text-white shadow-md flex items-center justify-center gap-1">
+            <i data-lucide="hash" class="w-3.5 h-3.5"></i> 교실 코드입장
+          </button>
+          <button id="tabAdminBtn" onclick="switchLobbyTab('admin')" class="py-2.5 rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i> 연구부장 로그인
+          </button>
+          <button id="tabCreateBtn" onclick="switchLobbyTab('create')" class="py-2.5 rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 시험실 개설
+          </button>
+        </div>
+
+        <!-- 탭 1: 6자리 코드로 교실 칠판 초간편 입장 (학생/교실용) -->
+        <div id="codeTabContent" class="flex flex-col gap-4 text-sm">
+          <div class="text-center py-2">
+            <label class="block text-xs font-bold text-slate-500 mb-2">교실 전자칠판용 6자리 입장 코드</label>
+            <input type="text" id="enterRoomCodeInput" maxlength="6" class="w-full text-center bg-blue-50/70 border-3 border-blue-400 rounded-2xl py-4 text-3xl md:text-4xl font-black font-mono tracking-widest text-blue-900 focus:outline-none focus:border-blue-600 focus:bg-white transition" placeholder="6자리 숫자" oninput="onCodeInput(this)">
+            <p class="text-xs text-slate-400 mt-2">※ 사내 메신저로 전달받은 6자리 숫자 코드를 입력하세요.</p>
+          </div>
+
+          <button onclick="handleEnterByCode('classroom')" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
+            <i data-lucide="monitor" class="w-5 h-5"></i> 교실 전자칠판 화면으로 입장
+          </button>
+        </div>
+
+        <!-- 탭 2: 연구부장(관리자) 로그인 -->
+        <div id="adminTabContent" class="hidden flex flex-col gap-4 text-sm">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">우리 학교 6자리 입장 코드</label>
+            <input type="text" id="adminRoomCodeInput" maxlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="예: 739214">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용(관리자) 비밀번호</label>
+            <input type="password" id="adminPasswordInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="개설 시 설정한 교사용 비밀번호">
+          </div>
+
+          <button onclick="handleEnterByCode('teacher')" class="mt-2 w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
+            <i data-lucide="key" class="w-5 h-5 text-amber-400"></i> 연구부장 관리자 모드로 입장
+          </button>
+        </div>
+
+        <!-- 탭 3: 새 학교 개설하기 폼 (연구부장용) -->
+        <div id="createTabContent" class="hidden flex flex-col gap-4 text-sm">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5">지역(시·도) <span class="text-rose-500">*</span></label>
+              <select id="createRegionSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-blue-600 focus:bg-white cursor-pointer">
+                <option value="서울">서울특별시</option>
+                <option value="경기" selected>경기도</option>
+                <option value="인천">인천광역시</option>
+                <option value="부산">부산광역시</option>
+                <option value="대구">대구광역시</option>
+                <option value="광주">광주광역시</option>
+                <option value="대전">대전광역시</option>
+                <option value="울산">울산광역시</option>
+                <option value="세종">세종특별자치시</option>
+                <option value="강원">강원특별자치도</option>
+                <option value="충북">충청북도</option>
+                <option value="충남">충청남도</option>
+                <option value="전북">전북특별자치도</option>
+                <option value="전남">전라남도</option>
+                <option value="경북">경상북도</option>
+                <option value="경남">경상남도</option>
+                <option value="제주">제주특별자치도</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 mb-1.5">우리 학교 이름 <span class="text-rose-500">*</span></label>
+              <input type="text" id="createSchoolName" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="예: 서진중학교 (지역명 제외)">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">시험 명칭</label>
+            <input type="text" id="createExamTitle" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" value="2026학년도 2학기 중간고사">
+          </div>
+
+          <!-- 학교 구분 (기본 시험시간) -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">학교 구분 (기본 시험시간)</label>
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+              <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition shadow-sm">
+                <input type="radio" name="createDuration" value="45" class="hidden">
+                <i data-lucide="school" class="w-4 h-4"></i>
+                <span>중학교 (45분 시험)</span>
+              </label>
+              <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition shadow-sm">
+                <input type="radio" name="createDuration" value="50" class="hidden" checked>
+                <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                <span>고등학교 (50분 시험)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-rose-600 mb-1.5">교사용 비밀번호 <span class="text-rose-500">*</span></label>
+              <input type="text" id="createTeacherPass" oninput="checkPasswordMismatch()" class="w-full bg-rose-50 border border-rose-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-rose-500 font-mono font-bold" placeholder="예: 7777">
+              <span class="text-[11px] text-slate-500 mt-1 block">시간표/정정 관리자용</span>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-emerald-600 mb-1.5">학생(교실)용 비밀번호 <span class="text-emerald-500">*</span></label>
+              <input type="text" id="createClassPass" oninput="checkPasswordMismatch()" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 font-mono font-bold" placeholder="예: 1234">
+              <span class="text-[11px] text-slate-500 mt-1 block">전자칠판 학생 열람 전용</span>
+            </div>
+          </div>
+
+          <!-- 두 비밀번호 동일 시 경고 메시지 -->
+          <div id="passwordMismatchWarning" class="hidden text-xs font-extrabold text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-300 flex items-center gap-1.5 animate-pulse">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
+            <span>⚠️ 교사용 비밀번호와 학생용 비밀번호는 반드시 서로 다르게 설정해야 합니다!</span>
+          </div>
+
+          <button onclick="handleCreateSchool()" class="mt-2 w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
+            <i data-lucide="check" class="w-5 h-5"></i> 우리 학교 시험상황실 개설하기 (코드 발급)
+          </button>
+        </div>
+
+      </div>
+
+      <div class="mt-6 text-xs text-slate-500 text-center font-medium">
+        Powered by LifeForTeacher.com • 전국 학교 전자칠판 실시간 알림 시스템
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- 2. EXAM BOARD VIEW (시험상황실 전자칠판 & 관리자 화면) -->
+  <!-- ============================================================== -->
+  <div id="examBoardView" class="hidden flex-1 h-screen max-h-screen overflow-hidden flex flex-col">
+    
+    <!-- TOP HEADER: 한 줄에 학교이름, 시험이름, 날짜, 현재시간, 남은시간 모두 배치 (초간결 깔끔) -->
+    <header class="header-bar border-b px-3 md:px-4 h-14 shrink-0 flex items-center justify-between gap-2.5 z-30 transition-colors">
+      <!-- 좌측: 학교명, 시험 명칭, 날짜/일차 -->
+      <div class="flex items-center gap-2 shrink-0 min-w-0">
+        <button onclick="leaveRoomToLobby()" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition shrink-0" title="학교 로비로 나가기">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </button>
+        <span id="schoolBadge" class="text-xs font-black px-2.5 py-1 rounded-lg bg-blue-600 text-white shadow-xs shrink-0">학교명</span>
+        <h1 id="examTitleDisplay" class="text-sm md:text-base font-black tracking-tight text-slate-900 truncate shrink-0 max-w-[140px] md:max-w-xs">중간고사</h1>
+        <span class="text-slate-300 font-light shrink-0">|</span>
+        <span id="currentDateDisplay" class="text-xs text-slate-600 font-bold shrink-0">2026년 10월 15일 (목)</span>
+        <div class="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+          <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-blue-600"></i>
+          <select id="headerDaySelect" onchange="handleHeaderDayChange(this.value)" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+            <!-- JS 동적 생성 -->
+          </select>
+        </div>
+      </div>
+
+      <!-- 중앙: 현재 시각 & 남은 시간 (한 줄 전광판) -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- 교실 모드: 현재 시각 & 남은 시간 -->
+        <div id="clockSection" class="flex items-center gap-3 bg-slate-900 text-white px-3.5 py-1 rounded-xl shadow-xs border border-slate-800">
+          <div class="flex items-center gap-1.5 font-mono">
+            <span class="text-[11px] font-bold text-slate-400">현재</span>
+            <span id="digitalClock" class="text-base md:text-lg font-black tracking-tight text-cyan-300">00:00:00</span>
+          </div>
+          <span class="w-px h-3.5 bg-slate-700"></span>
+          <div id="countdownBox" class="flex items-center gap-1.5 font-mono">
+            <span id="countdownLabel" class="text-[11px] font-bold text-amber-400">종료까지</span>
+            <span id="countdownValue" class="text-base md:text-lg font-black tracking-tight text-amber-300">--:--</span>
+          </div>
+        </div>
+
+        <!-- 교사 모드: 담백한 현재 시각 및 상태 배지 -->
+        <div id="teacherTimeBadge" class="hidden items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-600"></i>
+          <span>현재 <strong id="teacherClockText" class="font-mono text-slate-900">00:00:00</strong></span>
+          <span class="text-slate-300">|</span>
+          <span id="teacherPeriodText" class="text-blue-700 font-black">시험 일정 확인 중</span>
+        </div>
+      </div>
+
+      <!-- 우측: 6자리 코드, 모드 뱃지, 교사 컨트롤, 도구 버튼들 -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <span id="headerRoomCodeBadge" class="text-xs font-black px-2 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-mono shrink-0">
+          코드: 000000
+        </span>
+
+        <span id="roleBadge" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-800 shrink-0">
+          교실 모드
+        </span>
+
+        <!-- 가려진 학년 복구 버튼 (헤더 내부 한 줄에 배치하여 하단 카드 밀림 0px 방지) -->
+        <div id="hiddenGradesBar" class="hidden items-center gap-1 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-lg text-xs font-bold text-amber-900 shrink-0">
+          <span class="text-[11px] text-amber-800">👁️ 가림:</span>
+          <div id="hiddenGradesChips" class="flex items-center gap-1"></div>
+        </div>
+
+        <!-- 관리자 모드 전용 컨트롤 -->
+        <div id="teacherControls" class="hidden flex items-center gap-1.5 shrink-0">
+          <button onclick="openSettingsModal()" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-300 transition shadow-xs">
+            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            <span>시간표 세팅</span>
+          </button>
+          <button onclick="openNoticeModal()" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-xs border border-red-500 transition">
+            <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
+            <span>정정 등록</span>
+          </button>
+        </div>
+
+        <!-- 공통 버튼들 -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs border border-slate-300 transition shrink-0" title="화면 모드 전환">
+          <i data-lucide="sun-moon" class="w-4 h-4 text-amber-500"></i>
+        </button>
+
+        <button id="soundToggleBtn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs border border-slate-300 transition shrink-0" title="알림음 켜기/끄기">
+          <i data-lucide="volume-2" id="soundIcon" class="w-4 h-4 text-blue-600"></i>
+        </button>
+
+        <button id="fullscreenBtn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition shrink-0" title="전체화면 (F11)">
+          <i data-lucide="maximize" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT (100% 뷰포트 내 스크롤 없이 핏) -->
+    <main class="flex-1 min-h-0 w-full overflow-hidden flex flex-col p-2.5 md:p-3">
+      
+      <!-- ================= 1. 교사용 담백 깔끔 관리자 콘솔 대시보드 ================= -->
+      <div id="teacherDashboardView" class="hidden flex-1 min-h-0 overflow-hidden flex flex-col gap-2.5">
+        
+        <!-- 교사용 입장 코드 & 원클릭 공유 툴바 (담백한 1줄 툴바) -->
+        <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs shadow-xs">
+          <div class="flex items-center gap-2 text-slate-800">
+            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+            <span><strong>📢 교실 전자칠판 입장 코드:</strong> [ <code id="shareRoomCode" class="bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono text-amber-950 font-black text-sm">000000</code> ]</span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button onclick="copyDirectClassUrl()" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs transition">
+              📋 칠판 링크 복사
+            </button>
+            <button onclick="copyMessengerText()" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold transition">
+              💬 메신저 공지문 복사
+            </button>
+            <button onclick="copyAdminBookmarkUrl()" class="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold shadow-xs transition">
+              ⭐️ 관리자 북마크 복사
+            </button>
+            <button onclick="toggleClassroomPreview()" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-black shadow-xs transition flex items-center gap-1">
+              <i data-lucide="monitor" class="w-3.5 h-3.5 text-cyan-400"></i> 교실 칠판 미리보기
+            </button>
+          </div>
+        </div>
+
+        <!-- 2분할 관리 센터 (좌: 실시간 정정사항 관리 / 우: 오늘 시간표 요약) -->
+        <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+          
+          <!-- 좌측: 실시간 정정사항 관리 목록 (7단) -->
+          <div class="lg:col-span-7 bg-white border border-slate-200 rounded-xl shadow-xs p-3.5 flex flex-col min-h-0 h-full">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="p-1.5 bg-red-50 text-red-600 rounded-lg"><i data-lucide="megaphone" class="w-4 h-4"></i></span>
+                <h3 class="text-sm md:text-base font-black text-slate-900">실시간 문제 정정사항 관리</h3>
+                <span id="teacherNoticeCount" class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-extrabold border border-red-200">0건</span>
+              </div>
+              <button onclick="openNoticeModal()" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-xs transition flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> 새 정정사항 등록
+              </button>
+            </div>
+
+            <!-- 정정사항 카드 목록 (스크롤 가능) -->
+            <div id="teacherNoticeList" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pt-2.5 pr-1">
+              <!-- JS 동적 렌더링 -->
+            </div>
+          </div>
+
+          <!-- 우측: 오늘 시험 시간표 요약 (5단) -->
+          <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl shadow-xs p-3.5 flex flex-col min-h-0 h-full">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="calendar" class="w-4 h-4"></i></span>
+                <h3 class="text-sm md:text-base font-black text-slate-900">오늘 시험 시간표</h3>
+                <span id="teacherTodayDayTitle" class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">1일차</span>
+              </div>
+              <button onclick="openSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300 transition flex items-center gap-1">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i> 시간표 세팅
+              </button>
+            </div>
+
+            <!-- 시간표 요약 테이블 -->
+            <div class="flex-1 min-h-0 overflow-y-auto border border-slate-200 rounded-lg mt-2.5">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold sticky top-0 z-10">
+                  <tr>
+                    <th class="py-2 px-2.5 text-center w-14">교시</th>
+                    <th class="py-2 px-2.5 text-center">시험 시간</th>
+                    <th class="py-2 px-2 text-blue-700 font-extrabold">1학년</th>
+                    <th class="py-2 px-2 text-emerald-700 font-extrabold">2학년</th>
+                    <th class="py-2 px-2 text-purple-700 font-extrabold">3학년</th>
+                    <th class="py-2 px-2 text-center w-14">상태</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherTimetableBody" class="divide-y divide-slate-100">
+                  <!-- JS 동적 렌더링 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ================= 2. 교실 전자칠판 학생/열람용 뷰 ================= -->
+      <div id="classroomBoardView" class="flex-1 min-h-0 overflow-hidden flex flex-col gap-2.5">
+        
+        <!-- 교사용 미리보기 중일 때 상단 복귀 배너 -->
+        <div id="teacherPreviewBanner" class="hidden bg-slate-900 text-white px-3.5 py-1.5 rounded-xl flex items-center justify-between shadow-xs shrink-0">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span>현재 교실 전자칠판 화면을 미리보고 있습니다. (각 반 학생들에게 보여지는 화면입니다)</span>
+          </div>
+          <button onclick="toggleClassroomPreview()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition flex items-center gap-1">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> 관리자 대시보드로 복귀
+          </button>
+        </div>
+
+
+        <!-- 전학년 공통 긴급 공지 바 -->
+        <div id="allGradeNoticeContainer" class="hidden shrink-0">
+          <div class="bg-amber-50 border-2 border-amber-500 rounded-xl p-2.5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <span class="bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded text-xs flex items-center gap-1 shrink-0">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> 긴급 공지
+                </span>
+                <span id="allGradeNoticeContent" class="text-sm md:text-base font-black text-amber-950 truncate">
+                  -
+                </span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span id="allGradeNoticeTime" class="text-[11px] text-amber-900 font-mono font-bold">등록시간</span>
+                <button onclick="dismissCommonNotice()" class="text-slate-500 hover:text-slate-900 text-xs bg-white px-2 py-0.5 rounded border border-slate-300 font-bold">닫기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 학년별 컨테이너 (3개면 3등분, 2개면 2등분, 1개면 1등분 자동 분할) -->
+        <div id="gradesContainer" class="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 items-stretch overflow-hidden">
+          
+          <!-- 1학년 -->
+          <section id="column-grade-1" class="grade-column board-card flex-1 min-w-0 min-h-0 h-full flex flex-col border-2 border-blue-500/30 rounded-2xl overflow-hidden transition-all duration-300 bg-white shadow-xs">
+            <div class="bg-blue-600 text-white px-3.5 py-2.5 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-white shrink-0"></span>
+                <h2 id="grade-title-1" class="text-lg md:text-2xl font-black tracking-tight truncate">1학년 : 대기 중</h2>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span id="grade-time-1" class="text-xs md:text-sm font-mono font-bold bg-blue-700/90 text-blue-100 px-2.5 py-1 rounded-lg border border-blue-400/40">
+                  --:-- ~ --:--
+                </span>
+                <button onclick="toggleGradeVisibility(1)" class="p-1 rounded-md bg-blue-700/80 hover:bg-red-600 text-white transition text-xs font-bold" title="1학년 칸 가리기">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 p-3 flex flex-col gap-2 overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 shrink-0">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                  <i data-lucide="bell" class="w-3.5 h-3.5 text-red-600"></i>
+                  <span>실시간 문제 정정사항</span>
+                  <span id="badge-count-1" class="text-[11px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 font-extrabold border border-red-200">0</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">교시 종료 시 자동 삭제</span>
+              </div>
+              <div id="notices-grade-1" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-0.5"></div>
+            </div>
+          </section>
+
+          <!-- 2학년 -->
+          <section id="column-grade-2" class="grade-column board-card flex-1 min-w-0 min-h-0 h-full flex flex-col border-2 border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 bg-white shadow-xs">
+            <div class="bg-emerald-600 text-white px-3.5 py-2.5 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-white shrink-0"></span>
+                <h2 id="grade-title-2" class="text-lg md:text-2xl font-black tracking-tight truncate">2학년 : 대기 중</h2>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span id="grade-time-2" class="text-xs md:text-sm font-mono font-bold bg-emerald-700/90 text-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-400/40">
+                  --:-- ~ --:--
+                </span>
+                <button onclick="toggleGradeVisibility(2)" class="p-1 rounded-md bg-emerald-700/80 hover:bg-red-600 text-white transition text-xs font-bold" title="2학년 칸 가리기">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 p-3 flex flex-col gap-2 overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 shrink-0">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                  <i data-lucide="bell" class="w-3.5 h-3.5 text-red-600"></i>
+                  <span>실시간 문제 정정사항</span>
+                  <span id="badge-count-2" class="text-[11px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 font-extrabold border border-red-200">0</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">교시 종료 시 자동 삭제</span>
+              </div>
+              <div id="notices-grade-2" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-0.5"></div>
+            </div>
+          </section>
+
+          <!-- 3학년 -->
+          <section id="column-grade-3" class="grade-column board-card flex-1 min-w-0 min-h-0 h-full flex flex-col border-2 border-purple-500/30 rounded-2xl overflow-hidden transition-all duration-300 bg-white shadow-xs">
+            <div class="bg-purple-600 text-white px-3.5 py-2.5 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-white shrink-0"></span>
+                <h2 id="grade-title-3" class="text-lg md:text-2xl font-black tracking-tight truncate">3학년 : 대기 중</h2>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span id="grade-time-3" class="text-xs md:text-sm font-mono font-bold bg-purple-700/90 text-purple-100 px-2.5 py-1 rounded-lg border border-purple-400/40">
+                  --:-- ~ --:--
+                </span>
+                <button onclick="toggleGradeVisibility(3)" class="p-1 rounded-md bg-purple-700/80 hover:bg-red-600 text-white transition text-xs font-bold" title="3학년 칸 가리기">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 p-3 flex flex-col gap-2 overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 shrink-0">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                  <i data-lucide="bell" class="w-3.5 h-3.5 text-red-600"></i>
+                  <span>실시간 문제 정정사항</span>
+                  <span id="badge-count-3" class="text-[11px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 font-extrabold border border-red-200">0</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">교시 종료 시 자동 삭제</span>
+              </div>
+              <div id="notices-grade-3" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-0.5"></div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- 모든 학년 가려졌을 때 -->
+        <div id="allHiddenPlaceholder" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center bg-white border border-slate-300 rounded-2xl shadow-xs">
+          <i data-lucide="eye-off" class="w-10 h-10 text-slate-400 mb-2"></i>
+          <h3 class="text-lg font-black text-slate-800">모든 학년 칸이 가려져 있습니다.</h3>
+          <p class="text-xs text-slate-500 mt-1 mb-3">상단의 '가려진 학년 다시 보이기' 버튼을 눌러 원하는 학년을 선택해 주세요.</p>
+          <button onclick="restoreAllGrades()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-xs transition text-xs">
+            모든 학년 다시 보이기
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ================= MODAL: 새 학교 개설 완료 환영 가이드 ================= -->
+  <div id="welcomeGuideModal" class="modal-overlay hidden fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-300 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp">
+      <!-- 헤더 -->
+      <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-3 bg-white/20 rounded-2xl shadow-inner">
+            <i data-lucide="party-popper" class="w-8 h-8 text-amber-300"></i>
+          </div>
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-200">LifeForTeacher.com</span>
+            <h3 class="text-2xl font-black tracking-tight" id="welcomeSchoolTitle">시험상황실 개설 완료!</h3>
+            <p class="text-xs text-blue-100 mt-1">우리 학교 전용 6자리 입장 코드가 발급되었습니다.</p>
+          </div>
+        </div>
+        <button onclick="closeWelcomeGuideModal()" class="text-white/70 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- 본문 -->
+      <div class="p-6 flex flex-col gap-5 text-sm overflow-y-auto max-h-[75vh]">
+        
+        <!-- 6자리 고유 입장 코드 강조 배너 -->
+        <div class="bg-amber-50 border-3 border-amber-400 rounded-2xl p-4 text-center shadow-sm">
+          <div class="text-xs font-extrabold text-amber-800 uppercase tracking-wider mb-1">
+            📢 교실 전자칠판용 6자리 초간편 입장 코드
+          </div>
+          <div class="text-4xl md:text-5xl font-black font-mono text-amber-950 tracking-widest my-1" id="welcomeRoomCode">
+            739 214
+          </div>
+          <div class="text-xs font-bold text-amber-700 mt-1">
+            교실 칠판에서 학교 검색할 필요 없이 위 6자리 코드만 치면 바로 입장됩니다!
+          </div>
+        </div>
+
+        <!-- 1. 학교 접속 비밀번호 요약 카드 -->
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border-2 border-slate-200">
+          <div class="flex flex-col gap-1 p-3 bg-white rounded-xl border border-rose-200">
+            <span class="text-xs font-bold text-rose-600 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i> 교사용(관리자) 비밀번호
+            </span>
+            <span id="welcomeTeacherPass" class="text-xl font-black font-mono text-slate-900 tracking-wider">7777</span>
+            <span class="text-[11px] text-slate-400">시간표 세팅 및 문제 정정 등록용 (교사만 공유)</span>
+          </div>
+          <div class="flex flex-col gap-1 p-3 bg-white rounded-xl border border-emerald-200">
+            <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+              <i data-lucide="monitor" class="w-3.5 h-3.5"></i> 학생(교실 칠판)용 비밀번호
+            </span>
+            <span id="welcomeClassPass" class="text-xl font-black font-mono text-slate-900 tracking-wider">1234</span>
+            <span class="text-[11px] text-slate-400">전자칠판 학생 열람 전용 (학생 조작 차단)</span>
+          </div>
+        </div>
+
+        <!-- 2. 교실 전달 및 관리자 즐겨찾기 도구 -->
+        <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-200 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-blue-900 flex items-center gap-1.5">
+              <i data-lucide="share-2" class="w-4 h-4 text-blue-600"></i> 사내 메신저 전달 & 즐겨찾기 도구
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button onclick="copyMessengerText()" class="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm text-xs flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="message-square" class="w-4 h-4"></i> 메신저 공지문 복사
+            </button>
+            <button onclick="copyDirectClassUrl()" class="py-2.5 px-3 bg-white hover:bg-slate-100 text-blue-700 border border-blue-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="link" class="w-4 h-4"></i> 칠판 링크 복사
+            </button>
+            <button onclick="copyAdminBookmarkUrl()" class="py-2.5 px-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="bookmark" class="w-4 h-4"></i> 관리자 북마크 복사
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. 핵심 운영 안내사항 4가지 -->
+        <div class="flex flex-col gap-2.5">
+          <span class="text-xs font-black text-slate-700 uppercase tracking-wider">💡 필수 운영 안내사항</span>
+          <div class="grid grid-cols-1 gap-2 text-xs">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
+              <span class="p-1 bg-blue-100 text-blue-700 rounded font-black text-xs">1</span>
+              <div>
+                <strong class="text-slate-800">시작시간만 입력하면 종료시간 자동 계산:</strong>
+                <p class="text-slate-500 mt-0.5">중학교(45분) / 고등학교(50분) 설정 후 시작시간(예: 09:10)을 치면 종료시간이 45분/50분 뒤로 알아서 맞춰집니다.</p>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
+              <span class="p-1 bg-emerald-100 text-emerald-700 rounded font-black text-xs">2</span>
+              <div>
+                <strong class="text-slate-800">날짜별(1일차~5일차) 시간표 사전 등록:</strong>
+                <p class="text-slate-500 mt-0.5">[시간표 세팅]에서 1일차~5일차 탭을 추가해 시험 전날 미리 전 일정을 세팅해 둘 수 있습니다.</p>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
+              <span class="p-1 bg-purple-100 text-purple-700 rounded font-black text-xs">3</span>
+              <div>
+                <strong class="text-slate-800">최근 관리한 시험실 자동 기억:</strong>
+                <p class="text-slate-500 mt-0.5">연구부장님 컴퓨터에서는 사이트 첫 화면에 '최근 관리 시험실 바로가기'가 자동으로 뜨므로 검색 없이 1초 만에 입장됩니다.</p>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
+              <span class="p-1 bg-amber-100 text-amber-700 rounded font-black text-xs">4</span>
+              <div>
+                <strong class="text-slate-800">마지막 시험일로부터 7일 후 자동 영구 파기:</strong>
+                <p class="text-slate-500 mt-0.5">시험이 끝나고 7일이 지나면 서버 용량 및 개인정보 보호를 위해 모든 데이터가 자동으로 안전하게 삭제됩니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 풋터 버튼 -->
+      <div class="bg-slate-100 p-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button onclick="closeWelcomeGuideModalAndOpenSettings()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition flex items-center gap-2 text-sm">
+          <span>확인 및 시험 시간표 세팅하기</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= MODAL: 정정사항 등록 (교사용) ================= -->
+  <div id="noticeModal" class="modal-overlay hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+    <div class="bg-white border border-slate-300 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp">
+      <div class="bg-red-600 text-white px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="megaphone" class="w-5 h-5"></i>
+          <div>
+            <h3 class="text-base font-black">시험 문제 정정사항 등록</h3>
+            <span class="text-[11px] text-red-100">등록 즉시 모든 교실 전자칠판에 띵동~ 소리와 함께 뜹니다.</span>
+          </div>
+        </div>
+        <button onclick="closeNoticeModal()" class="text-white/80 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="noticeForm" class="p-4 flex flex-col gap-3 text-xs" onsubmit="handleNoticeSubmit(event)">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">대상 학년 선택</label>
+          <div class="grid grid-cols-4 gap-1.5">
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition font-bold text-xs">
+              <input type="radio" name="targetGrade" value="1" class="hidden" checked onchange="onNoticeGradeChange()">
+              <span>1학년</span>
+            </label>
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-emerald-500 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white transition font-bold text-xs">
+              <input type="radio" name="targetGrade" value="2" class="hidden" onchange="onNoticeGradeChange()">
+              <span>2학년</span>
+            </label>
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-purple-500 has-[:checked]:bg-purple-600 has-[:checked]:border-purple-600 has-[:checked]:text-white transition font-bold text-xs">
+              <input type="radio" name="targetGrade" value="3" class="hidden" onchange="onNoticeGradeChange()">
+              <span>3학년</span>
+            </label>
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-amber-500 has-[:checked]:bg-amber-600 has-[:checked]:border-amber-600 has-[:checked]:text-white transition font-bold text-xs">
+              <input type="radio" name="targetGrade" value="all" class="hidden" onchange="onNoticeGradeChange()">
+              <span>전학년</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">해당 교시</label>
+            <select id="noticePeriodSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 text-xs" onchange="onNoticePeriodChange()"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">시험 과목</label>
+            <input type="text" id="noticeSubjectInput" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 text-xs" placeholder="예: 국어" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">빠른 문구 템플릿</label>
+          <div class="flex flex-wrap gap-1">
+            <button type="button" onclick="applyTemplate('fix_item')" class="text-[11px] px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200">
+              ✏️ 문항 보기 수정
+            </button>
+            <button type="button" onclick="applyTemplate('add_condition')" class="text-[11px] px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200">
+              ➕ 조건/지문 추가
+            </button>
+            <button type="button" onclick="applyTemplate('typo')" class="text-[11px] px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200">
+              🔍 오탈자 정정
+            </button>
+            <button type="button" onclick="applyTemplate('time_extend')" class="text-[11px] px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium border border-slate-200">
+              ⏱️ 시험시간 연장
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">전달/정정 내용 <span class="text-red-600">*</span></label>
+          <textarea id="noticeContentInput" rows="2" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-600" placeholder="예) 15번 문항 보기 3번 '사과'를 '배'로 수정하세요." required></textarea>
+        </div>
+
+        <!-- 사진 첨부 영역 (1장 전용) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span>문제 사진 첨부 <span class="text-slate-400 font-normal">(선택, 1장만 가능)</span></span>
+            </label>
+            <span class="text-[11px] text-slate-400 font-medium">지문·그림·오탈자 캡처 사진</span>
+          </div>
+
+          <!-- 미첨부 시: 클릭 또는 Ctrl+V 첨부 영역 -->
+          <div id="noticeImageUploadArea" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-2.5 bg-slate-50 hover:bg-blue-50/50 transition cursor-pointer flex items-center justify-center gap-2" onclick="document.getElementById('noticeImageFileInput').click()">
+            <input type="file" id="noticeImageFileInput" accept="image/*" class="hidden" onchange="handleNoticeImageSelect(event)">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-slate-400"></i>
+            <span class="text-xs font-bold text-slate-600">클릭하여 사진 첨부 <span class="text-slate-400 font-normal">또는 캡처 후 Ctrl+V 붙여넣기</span></span>
+          </div>
+
+          <!-- 첨부 완료 시: 1장 썸네일 미리보기 + 삭제 버튼 -->
+          <div id="noticeImagePreviewArea" class="hidden border border-slate-300 rounded-xl overflow-hidden bg-slate-50 p-2 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img id="noticeImagePreviewImg" src="" alt="첨부 사진 미리보기" class="w-12 h-12 object-cover rounded-lg border border-slate-200 bg-white cursor-pointer shadow-xs hover:opacity-90 transition" onclick="openImageModal(this.src)" title="클릭 시 크게 보기">
+              <div class="min-w-0">
+                <div id="noticeImageFileName" class="text-xs font-bold text-slate-800 truncate">첨부사진.jpg</div>
+                <div id="noticeImageFileSize" class="text-[11px] text-slate-400 font-mono">0 KB</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="document.getElementById('noticeImageFileInput').click()" class="px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
+                사진 변경
+              </button>
+              <button type="button" onclick="removeNoticeImage()" class="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition">
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-[11px] font-medium text-slate-500 flex items-center gap-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600 shrink-0"></i>
+          <span>해당 교시 시험 종료 시각이 지나면 전자칠판에서 자동으로 삭제됩니다.</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeNoticeModal()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition text-xs">
+            취소
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-black shadow transition text-xs flex items-center gap-1.5">
+            <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
+            <span>전체 교실에 즉시 전달</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ================= MODAL: 시간표 세팅 (날짜별 & 45분 자동계산 - 스크롤바 없는 컴팩트 핏) ================= -->
+  <div id="settingsModal" class="modal-overlay hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+    <div class="bg-white border border-slate-300 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp">
+      <!-- 헤더 -->
+      <div class="bg-blue-600 text-white px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <div>
+            <h3 class="text-base font-black">시험 일정 및 날짜별 시간표 세팅</h3>
+            <span class="text-[11px] text-blue-100">시작시간을 입력하면 시험시간에 맞춰 종료시간이 자동 계산됩니다.</span>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-white/80 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 flex-1 flex flex-col gap-2.5 text-xs">
+        
+        <!-- 시험 기본 정보 & 시험시간(분) 설정 바 (한 줄 통합) -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2 flex-1 min-w-[260px]">
+            <label class="text-xs font-bold text-slate-700 whitespace-nowrap">시험 명칭:</label>
+            <input type="text" id="settingExamTitle" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-slate-900 font-extrabold text-xs flex-1 focus:outline-none focus:border-blue-600" placeholder="2026학년도 2학기 중간고사">
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-700">학교 급별 시험시간:</span>
+            <div class="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white text-xs font-bold">
+              <button type="button" onclick="setExamDuration(45)" id="btnDur45" class="py-1 px-2.5 rounded-md transition">중학교 (45분)</button>
+              <button type="button" onclick="setExamDuration(50)" id="btnDur50" class="py-1 px-2.5 rounded-md transition">고등학교 (50분)</button>
+              <button type="button" onclick="promptCustomDuration()" id="btnDurCustom" class="py-1 px-2.5 rounded-md transition text-slate-600 hover:text-slate-900">직접 설정</button>
+            </div>
+            <span id="activeDurationTag" class="text-[11px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">50분</span>
+          </div>
+        </div>
+
+        <!-- 시험 일차(날짜) 관리 바 (한 줄 통합) -->
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-blue-50/60 p-2 px-3 rounded-xl border border-blue-200">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-bold text-blue-950 text-xs">시험 일차:</span>
+            <div id="settingsDayTabs" class="flex items-center gap-1"></div>
+            <button type="button" onclick="addNewDayTab()" class="text-xs px-2 py-1 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold border border-emerald-300 transition flex items-center gap-1">
+              <i data-lucide="plus" class="w-3 h-3"></i> 일차 추가
+            </button>
+            <button type="button" onclick="deleteCurrentDayTab()" class="text-xs px-2 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 transition">
+              삭제
+            </button>
+          </div>
+          <div class="flex items-center gap-3 ml-auto">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-blue-900 text-xs">일차 명칭:</span>
+              <input type="text" id="currentDayNameInput" oninput="onCurrentDayMetaChange()" class="bg-white border border-blue-300 rounded-lg px-2 py-0.5 font-bold text-blue-950 w-20 text-xs" placeholder="1일차">
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-blue-900 text-xs">시험 날짜:</span>
+              <input type="date" id="currentDayDateInput" onchange="onCurrentDayMetaChange()" class="bg-white border border-blue-300 rounded-lg px-2 py-0.5 font-bold text-slate-800 text-xs">
+            </div>
+          </div>
+        </div>
+
+        <!-- 교시별 시간표 테이블 (컴팩트 고시인성) -->
+        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-700 border-b border-slate-200 font-extrabold">
+              <tr>
+                <th class="py-2 px-2.5 w-16 text-center">교시</th>
+                <th class="py-2 px-2.5 w-48 text-center">시험 시간 (시작 ➔ 자동 연산)</th>
+                <th class="py-2 px-2.5 text-blue-700 font-bold">1학년 시험 과목</th>
+                <th class="py-2 px-2.5 text-emerald-700 font-bold">2학년 시험 과목</th>
+                <th class="py-2 px-2.5 text-purple-700 font-bold">3학년 시험 과목</th>
+                <th class="py-2 px-2 w-10 text-center">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="periodTableBody" class="divide-y divide-slate-100 bg-white font-medium"></tbody>
+          </table>
+        </div>
+
+        <div class="flex items-center justify-between pt-0.5">
+          <button type="button" onclick="addPeriodRow()" class="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 font-bold hover:bg-blue-200 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 교시 추가
+          </button>
+          <div class="text-[11px] text-slate-500 font-medium">
+            💡 시작 시간만 입력하면 설정된 시험시간(<span id="durationGuideSpan" class="font-bold text-blue-700">50</span>분)이 자동 반영되어 종료시간이 계산됩니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 px-5 py-2.5 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeSettingsModal()" class="px-4 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-300 transition text-xs">
+          닫기
+        </button>
+        <button type="button" onclick="saveSettings()" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black shadow transition text-xs flex items-center gap-1.5">
+          <span>💾 전체 일정 저장 및 칠판 동기화</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: 사진 확대 보기 (라이트박스) ================= -->
+  <div id="imageLightboxModal" class="modal-overlay hidden fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-zoom-out" onclick="closeImageModal()">
+    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <div class="absolute -top-10 right-0 flex items-center gap-2">
+        <a id="lightboxDownloadBtn" href="#" download="exam-notice.jpg" class="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur transition flex items-center gap-1">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> 원본 저장
+        </a>
+        <button onclick="closeImageModal()" class="p-1 rounded-lg bg-white/20 hover:bg-white/30 text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <img id="lightboxImage" src="" alt="정정사항 사진 확대" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl bg-white border border-slate-700">
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

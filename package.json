@@ -1,0 +1,13 @@
+{
+  "name": "school-exam-board",
+  "version": "1.0.0",
+  "description": "실시간 시험 시간표 & 정정사항 전자칠판 알림 시스템",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
