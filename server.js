@@ -264,6 +264,10 @@ function loadDatabase() {
 
 function saveDatabase() {
   try {
+    const dataDir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (err) {
     console.error('데이터베이스 저장 실패:', err.message);
