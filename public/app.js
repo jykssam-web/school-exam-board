@@ -111,6 +111,23 @@ function checkUrlParamsForAutoJoin() {
     switchLobbyTab(tabParam);
   }
 
+  const roleParam = params.get('role');
+  if (roleParam === 'teacher' || adminCodeParam) {
+    const code = adminCodeParam || codeParam;
+    if (code) {
+      switchLobbyTab('admin');
+      const input = document.getElementById('adminRoomCodeInput');
+      if (input) input.value = code.trim();
+      const passParam = params.get('pass');
+      if (passParam) {
+        const passInput = document.getElementById('adminPasswordInput');
+        if (passInput) passInput.value = passParam.trim();
+      }
+      handleEnterByCode('teacher');
+      return;
+    }
+  }
+
   if (codeParam) {
     switchLobbyTab('code');
     const input = document.getElementById('enterRoomCodeInput');
@@ -210,7 +227,8 @@ async function handleEnterByCode(role) {
       document.getElementById('adminRoomCodeInput')?.focus();
       return;
     }
-    if (!password) {
+    const token = api.getTeacherToken();
+    if (!password && !token) {
       alert('교사용(관리자) 비밀번호를 입력해 주세요.');
       document.getElementById('adminPasswordInput')?.focus();
       return;
@@ -220,6 +238,17 @@ async function handleEnterByCode(role) {
   try {
     const { ok, data } = await api.authByCode(code, role, password);
     if (!ok) {
+      if (role === 'teacher' && !password) {
+        switchLobbyTab('admin');
+        const passInput = document.getElementById('adminPasswordInput');
+        if (passInput) {
+          passInput.focus();
+          passInput.placeholder = '개설 시 설정한 관리자 비밀번호를 입력해 주세요';
+          passInput.classList.add('ring-2', 'ring-blue-500');
+          setTimeout(() => passInput.classList.remove('ring-2', 'ring-blue-500'), 2500);
+        }
+        return;
+      }
       alert(data.error || '입장에 실패했습니다.');
       return;
     }
@@ -295,10 +324,25 @@ async function enterRecentSchool() {
   try {
     const recent = JSON.parse(raw);
     if (recent.role === 'teacher') {
+      const existingToken = api.getTeacherToken();
+      if (existingToken && recent.roomCode) {
+        const { ok, data } = await api.authByCode(recent.roomCode, 'teacher', '');
+        if (ok) {
+          saveRecentSchool(data.school, 'teacher');
+          enterExamBoard(data.school, 'teacher');
+          return;
+        }
+      }
       switchLobbyTab('admin');
       const codeInput = document.getElementById('adminRoomCodeInput');
       if (codeInput) codeInput.value = recent.roomCode || '';
-      document.getElementById('adminPasswordInput')?.focus();
+      const passInput = document.getElementById('adminPasswordInput');
+      if (passInput) {
+        passInput.focus();
+        passInput.placeholder = '개설 시 설정한 관리자 비밀번호를 입력해 주세요';
+        passInput.classList.add('ring-2', 'ring-blue-500');
+        setTimeout(() => passInput.classList.remove('ring-2', 'ring-blue-500'), 2500);
+      }
     } else {
       switchLobbyTab('code');
       const codeInput = document.getElementById('enterRoomCodeInput');
@@ -434,6 +478,19 @@ function enterExamBoard(school, role, passwords = {}) {
   currentSchool = school;
   currentRole = role;
   teacherPreviewMode = false;
+
+  try {
+    if (school && school.roomCode) {
+      const url = new URL(window.location);
+      url.searchParams.set('code', school.roomCode);
+      if (role === 'teacher') {
+        url.searchParams.set('role', 'teacher');
+      } else {
+        url.searchParams.delete('role');
+      }
+      window.history.replaceState({}, '', url);
+    }
+  } catch (e) {}
 
   if (new URLSearchParams(window.location.search).get('sampleNotice') === '1') {
     currentSchool.notices = [
@@ -717,6 +774,13 @@ function leaveRoomToLobby() {
     api.clearTeacherToken();
     currentSchool = null;
     teacherPreviewMode = false;
+    try {
+      const url = new URL(window.location);
+      url.searchParams.delete('code');
+      url.searchParams.delete('role');
+      url.searchParams.delete('adminCode');
+      window.history.replaceState({}, '', url);
+    } catch (e) {}
     document.getElementById('examBoardView').classList.add('hidden');
     document.getElementById('lobbyView').classList.remove('hidden');
     fetchSchoolList();

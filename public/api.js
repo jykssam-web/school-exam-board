@@ -49,7 +49,7 @@ const api = (() => {
         return [];
       }
     },
-    authByCode: (code, role, password) => post('/api/schools/auth-by-code', { code, role, password }),
+    authByCode: (code, role, password, token) => post('/api/schools/auth-by-code', { code, role, password, teacherToken: token || teacherToken }),
     authByName: (schoolName, password) => post('/api/schools/auth', { schoolName, password }),
     createSchool: (fields) => post('/api/schools/create', fields),
 
