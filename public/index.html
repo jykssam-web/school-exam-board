@@ -185,7 +185,7 @@
   <div id="examBoardView" class="hidden flex-1 h-screen max-h-screen overflow-hidden flex flex-col">
     
     <!-- TOP HEADER: 한 줄에 학교이름, 시험이름, 날짜, 현재시간, 남은시간 모두 배치 (초간결 깔끔) -->
-    <header class="header-bar border-b px-3 md:px-4 h-14 shrink-0 flex items-center justify-between gap-2.5 z-30 transition-colors">
+    <header class="header-bar border-b px-3 md:px-5 min-h-[68px] md:min-h-[80px] py-1.5 shrink-0 flex items-center justify-between gap-3 z-30 transition-colors">
       <!-- 좌측: 학교명, 시험 명칭, 날짜/일차 -->
       <div class="flex items-center gap-2 shrink-0 min-w-0">
         <button onclick="leaveRoomToLobby()" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition shrink-0" title="학교 로비로 나가기">
@@ -203,18 +203,18 @@
         </div>
       </div>
 
-      <!-- 중앙: 현재 시각 & 남은 시간 (한 줄 전광판) -->
-      <div class="flex items-center gap-2 shrink-0">
-        <!-- 교실 모드: 현재 시각 & 남은 시간 -->
-        <div id="clockSection" class="flex items-center gap-3 bg-slate-900 text-white px-3.5 py-1 rounded-xl shadow-xs border border-slate-800">
-          <div class="flex items-center gap-1.5 font-mono">
-            <span class="text-[11px] font-bold text-slate-400">현재</span>
-            <span id="digitalClock" class="text-base md:text-lg font-black tracking-tight text-cyan-300">00:00:00</span>
+      <!-- 중앙: [3배 초대형 전광판] 현재 시각 & 종료까지 남은 시간 -->
+      <div class="flex items-center gap-2 shrink-0 my-auto">
+        <!-- 교실 모드: 3배 초대형 전광판 시계 & 남은 시간 -->
+        <div id="clockSection" class="flex items-center gap-4 md:gap-7 bg-black/95 text-white px-5 md:px-8 py-1 md:py-1.5 rounded-2xl shadow-xl border-2 border-slate-700">
+          <div class="flex flex-col items-center">
+            <span class="text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-slate-400">현재 시각</span>
+            <span id="digitalClock" class="text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-white drop-shadow">00:00:00</span>
           </div>
-          <span class="w-px h-3.5 bg-slate-700"></span>
-          <div id="countdownBox" class="flex items-center gap-1.5 font-mono">
-            <span id="countdownLabel" class="text-[11px] font-bold text-amber-400">종료까지</span>
-            <span id="countdownValue" class="text-base md:text-lg font-black tracking-tight text-amber-300">--:--</span>
+          <span class="w-px h-8 md:h-12 bg-slate-700"></span>
+          <div id="countdownBox" class="flex flex-col items-center">
+            <span id="countdownLabel" class="text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-amber-400">종료까지</span>
+            <span id="countdownValue" class="text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-yellow-300 drop-shadow">--:--</span>
           </div>
         </div>
 
@@ -655,23 +655,25 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-slate-700">해당 교시</label>
-              <span id="noticePeriodAutoBadge" class="text-[10px] font-bold text-emerald-600"></span>
+        <!-- 교시 선택 드롭다운 완전 제거: 현재 시각 기반 자동 감지 카드 -->
+        <input type="hidden" id="noticePeriodSelect" value="1">
+        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 flex flex-col gap-2 shadow-xs">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span id="noticeAutoPeriodBadge" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs">
+                ⚡ 2교시 (10:15~11:00)
+              </span>
+              <span class="text-xs text-emerald-800 font-bold">현재 시각 자동 감지</span>
             </div>
-            <select id="noticePeriodSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 text-xs" onchange="onNoticePeriodChange()"></select>
+            <span id="noticeAutoExpiryBadge" class="text-[11px] font-bold text-emerald-900 bg-white px-2.5 py-1 rounded-md border border-emerald-200 shadow-xs">
+              11:01:00 자동 삭제 예정
+            </span>
           </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-slate-700">시험 과목</label>
-              <span class="text-slate-400 font-normal text-[10px]">(자동 반영)</span>
-            </div>
-            <input type="text" id="noticeSubjectInput" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 text-xs" placeholder="예: 국어" required>
+          <div class="flex items-center gap-2 pt-0.5">
+            <label class="text-xs font-bold text-slate-700 shrink-0">시험 과목:</label>
+            <input type="text" id="noticeSubjectInput" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 text-xs shadow-inner" placeholder="과목명 (예: 국어)" required>
           </div>
         </div>
-        <div id="noticePeriodHint" class="text-[11px] text-slate-500 -mt-1 font-medium"></div>
 
         <div>
           <label class="block text-[11px] font-bold text-slate-500 mb-1">빠른 문구 템플릿</label>

@@ -1099,9 +1099,7 @@ function updateClockAndTimer() {
     if (countdownLabelEl) countdownLabelEl.innerText = "종료까지";
     if (countdownValueEl) {
       countdownValueEl.innerText = `${String(remM).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
-      countdownValueEl.className = diffSeconds <= 300 
-        ? "text-base md:text-lg font-black font-mono tracking-tight text-rose-400 animate-ping" 
-        : "text-base md:text-lg font-black font-mono tracking-tight text-amber-300";
+      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-yellow-300 drop-shadow";
     }
   } else if (nextPeriod) {
     if (periodStatusEl) {
@@ -1121,7 +1119,7 @@ function updateClockAndTimer() {
     if (countdownLabelEl) countdownLabelEl.innerText = `${nextPeriod.name || '다음'} 시작까지`;
     if (countdownValueEl) {
       countdownValueEl.innerText = `${String(remM).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
-      countdownValueEl.className = "text-base md:text-lg font-black font-mono tracking-tight text-slate-300";
+      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-slate-300 drop-shadow";
     }
   } else {
     if (periodStatusEl) {
@@ -1137,7 +1135,7 @@ function updateClockAndTimer() {
     if (countdownLabelEl) countdownLabelEl.innerText = "상태";
     if (countdownValueEl) {
       countdownValueEl.innerText = "종료";
-      countdownValueEl.className = "text-base md:text-lg font-black font-mono tracking-tight text-slate-400";
+      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-slate-400 drop-shadow";
     }
   }
 
@@ -1700,54 +1698,45 @@ function findCurrentPeriod(timetable) {
 
 function populateNoticePeriods() {
   const select = document.getElementById('noticePeriodSelect');
-  const badge = document.getElementById('noticePeriodAutoBadge');
-  const hint = document.getElementById('noticePeriodHint');
+  const autoBadge = document.getElementById('noticeAutoPeriodBadge');
+  const expiryBadge = document.getElementById('noticeAutoExpiryBadge');
   const timetable = getCurrentActiveTimetable();
 
   if (timetable.length === 0) {
-    select.innerHTML = '<option value="1">1교시</option>';
-    if (badge) badge.innerText = '';
-    if (hint) hint.innerText = '';
+    if (select) select.value = '1';
+    if (autoBadge) autoBadge.innerText = '1교시';
+    if (expiryBadge) expiryBadge.innerText = '시험 종료 시 자동 삭제';
+    onNoticeGradeChange();
     return;
   }
 
   const detected = findCurrentPeriod(timetable);
   const targetPeriod = detected ? detected.item.period : timetable[0].period;
+  if (select) select.value = targetPeriod;
 
-  select.innerHTML = timetable.map(item => {
-    let suffix = '';
-    if (detected && detected.item.period === item.period) {
-      if (detected.status === 'in_progress') suffix = ' (⚡현재 진행중)';
-      else if (detected.status === 'upcoming') suffix = ' (⏳다음 시험)';
+  if (detected) {
+    const item = detected.item;
+    if (autoBadge) {
+      if (detected.status === 'in_progress') {
+        autoBadge.className = "px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs";
+        autoBadge.innerText = `⚡ ${item.name} (${item.startTime}~${item.endTime})`;
+      } else if (detected.status === 'upcoming') {
+        autoBadge.className = "px-2.5 py-1 rounded-lg bg-blue-600 text-white font-black text-xs shadow-xs";
+        autoBadge.innerText = `⏳ 다음 ${item.name} (${item.startTime}~${item.endTime})`;
+      } else {
+        autoBadge.className = "px-2.5 py-1 rounded-lg bg-slate-600 text-white font-black text-xs shadow-xs";
+        autoBadge.innerText = `🏁 오늘 시험 종료 (${item.name})`;
+      }
     }
-    return `<option value="${item.period}">${item.name} (${item.startTime} ~ ${item.endTime})${suffix}</option>`;
-  }).join('');
 
-  select.value = targetPeriod;
-
-  if (badge) {
-    if (detected && detected.status === 'in_progress') {
-      badge.className = "text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200";
-      badge.innerText = `현재 ${detected.item.name} 자동 감지`;
-    } else if (detected && detected.status === 'upcoming') {
-      badge.className = "text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200";
-      badge.innerText = `다음 ${detected.item.name} 자동 감지`;
-    } else {
-      badge.className = "text-[10px] font-bold text-slate-500";
-      badge.innerText = '(자동 선택)';
-    }
-  }
-
-  if (hint && detected) {
-    const end = detected.item.endTime || '';
-    if (end) {
-      const [eH, eM] = end.split(':').map(Number);
+    if (expiryBadge && item.endTime) {
+      const [eH, eM] = item.endTime.split(':').map(Number);
       const nextMinuteStr = `${String(eH).padStart(2, '0')}:${String(eM + 1).padStart(2, '0')}:00`;
-      hint.innerHTML = `<span class="text-blue-600 font-bold">⚡ 현재 시각에 맞춰 [${detected.item.name}]가 자동 선택되었습니다.</span> 시험 종료 후(<span class="font-bold text-red-600">${end}</span> 직후 <span class="font-bold text-red-600">${nextMinuteStr}</span>) 전 교실 화면에서 자동 삭제됩니다.`;
-    } else {
-      hint.innerText = `현재 시각에 맞춰 [${detected.item.name}]가 자동 선택되었습니다.`;
+      expiryBadge.innerText = `${nextMinuteStr} 자동 삭제 예정`;
     }
   }
+
+  onNoticeGradeChange();
 }
 
 function onNoticeGradeChange() {
