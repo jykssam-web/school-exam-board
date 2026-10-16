@@ -57,6 +57,7 @@ const api = (() => {
     joinRoom: (schoolId) => socket.emit('join_school_room', { schoolId }),
     changeDay: (schoolId, dayIndex) => socket.emit('change_school_day', { schoolId, teacherToken, dayIndex }),
     updateSettings: (schoolId, settings) => socket.emit('update_school_settings', { schoolId, teacherToken, ...settings }),
+    toggleClock: (schoolId, showClock) => socket.emit('toggle_school_clock', { schoolId, teacherToken, showClock }),
     addNotice: (schoolId, noticeData) => socket.emit('add_school_notice', { schoolId, teacherToken, noticeData }),
     deleteNotice: (schoolId, noticeId) => socket.emit('delete_school_notice', { schoolId, teacherToken, noticeId }),
 

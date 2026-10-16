@@ -654,7 +654,7 @@ io.on('connection', (socket) => {
   });
 
   // [교사용] 날짜별 시간표 및 시험 정보 전체 갱신 (🔒 교사 토큰 검증)
-  socket.on('update_school_settings', ({ schoolId, teacherToken, examTitle, defaultDuration, currentDayIndex, days }) => {
+  socket.on('update_school_settings', ({ schoolId, teacherToken, examTitle, defaultDuration, currentDayIndex, days, showClock }) => {
     if (!isValidTeacherToken(schoolId, teacherToken)) {
       console.warn(`[보안 경고] 학교 ${schoolId} 시간표 변경 거부: 교사 토큰 없음 또는 불일치`);
       socket.emit('auth_error', { message: '교사 권한 인증에 실패했습니다. 다시 로그인해 주세요.' });
@@ -668,10 +668,25 @@ io.on('connection', (socket) => {
     if (defaultDuration) school.defaultDuration = Number(defaultDuration);
     if (typeof currentDayIndex === 'number') school.currentDayIndex = currentDayIndex;
     if (days && Array.isArray(days)) school.days = days;
+    if (typeof showClock === 'boolean') school.showClock = showClock;
 
     saveDatabase();
     io.to(schoolId).emit('room_state_update', publicSchool(school));
-    console.log(`[${school.name}] 날짜별 시간표 설정 갱신 완료 (현재: ${currentDayIndex + 1}일차)`);
+    console.log(`[${school.name}] 날짜별 시간표 설정 갱신 완료 (현재: ${currentDayIndex + 1}일차, 시계표시: ${school.showClock !== false})`);
+  });
+
+  // [교사용] 교실 전자칠판 시계 전광판 표시 ON/OFF 토글
+  socket.on('toggle_school_clock', ({ schoolId, teacherToken, showClock }) => {
+    if (!isValidTeacherToken(schoolId, teacherToken)) {
+      socket.emit('auth_error', { message: '교사 권한 인증에 실패했습니다.' });
+      return;
+    }
+    const school = db.schools[schoolId];
+    if (!school) return;
+    school.showClock = (showClock !== false);
+    saveDatabase();
+    io.to(schoolId).emit('room_state_update', publicSchool(school));
+    console.log(`[${school.name}] 교실 시계 전광판 표시 설정 변경: ${school.showClock ? '표시' : '숨김'}`);
   });
 
   // [교사용] 현재 시험 일차 변경 (🔒 교사 토큰 검증)

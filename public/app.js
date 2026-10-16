@@ -568,6 +568,7 @@ function enterExamBoard(school, role, passwords = {}) {
 
     renderTeacherNotices();
     renderTeacherTodayTimetable();
+    updateClockStatusBadge(school.showClock !== false);
   } else {
     if (roleBadge) {
       roleBadge.className = "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shrink-0";
@@ -576,8 +577,7 @@ function enterExamBoard(school, role, passwords = {}) {
     if (teacherControls) teacherControls.classList.add('hidden');
     if (teacherNoticeBar) teacherNoticeBar.classList.add('hidden');
 
-    // 학생/교실 전용: 한 줄 시계 전광판 및 칠판 표시
-    if (clockSection) clockSection.classList.remove('hidden');
+    // 학생/교실 전용: 교실 칠판 표시 및 설정에 따른 시계 가시성 제어
     if (teacherTimeBadge) teacherTimeBadge.classList.add('hidden');
     if (teacherDash) teacherDash.classList.add('hidden');
     if (classroomBoard) classroomBoard.classList.remove('hidden');
@@ -587,6 +587,7 @@ function enterExamBoard(school, role, passwords = {}) {
     renderNotices();
   }
 
+  updateClockVisibility();
   updateClockAndTimer();
   if (window.lucide) lucide.createIcons();
 }
@@ -596,14 +597,12 @@ function toggleClassroomPreview() {
   teacherPreviewMode = !teacherPreviewMode;
   const teacherDash = document.getElementById('teacherDashboardView');
   const classroomBoard = document.getElementById('classroomBoardView');
-  const clockSection = document.getElementById('clockSection');
   const teacherTimeBadge = document.getElementById('teacherTimeBadge');
   const previewBanner = document.getElementById('teacherPreviewBanner');
 
   if (teacherPreviewMode) {
     teacherDash.classList.add('hidden');
     classroomBoard.classList.remove('hidden');
-    clockSection.classList.remove('hidden');
     teacherTimeBadge.classList.add('hidden');
     previewBanner?.classList.remove('hidden');
     applyHiddenGradesToUI();
@@ -612,12 +611,12 @@ function toggleClassroomPreview() {
   } else {
     teacherDash.classList.remove('hidden');
     classroomBoard.classList.add('hidden');
-    clockSection.classList.add('hidden');
     teacherTimeBadge.classList.remove('hidden');
     previewBanner?.classList.add('hidden');
     renderTeacherNotices();
     renderTeacherTodayTimetable();
   }
+  updateClockVisibility();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -800,6 +799,8 @@ api.onRoomState((schoolData) => {
   currentSchool = schoolData;
   document.getElementById('examTitleDisplay').innerText = currentSchool.examTitle || '시험상황실';
   updateHeaderDaySelector();
+  updateClockStatusBadge(currentSchool.showClock !== false);
+  updateClockVisibility();
   renderHeroSubjects();
   renderNotices();
   renderTeacherNotices();
@@ -1117,6 +1118,50 @@ function destroyCountdownBoxes() {
 }
 destroyCountdownBoxes();
 
+// 🕒 교실 전자칠판 시계 표시 여부 제어 (관리자 체크 해제 옵션)
+function handleClockToggle(isChecked) {
+  if (!currentSchool) return;
+  currentSchool.showClock = isChecked;
+  api.toggleClock(currentSchool.id, isChecked);
+  updateClockStatusBadge(isChecked);
+  updateClockVisibility();
+}
+
+function updateClockStatusBadge(isChecked) {
+  const badge = document.getElementById('clockStatusBadge');
+  const toggle = document.getElementById('teacherClockToggle');
+  const settingsCheck = document.getElementById('settingsShowClock');
+  if (badge) {
+    if (isChecked) {
+      badge.className = "text-[10px] px-1.5 py-0.2 rounded font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300";
+      badge.innerText = "● 시계 작동 중";
+    } else {
+      badge.className = "text-[10px] px-1.5 py-0.2 rounded font-extrabold bg-slate-200 text-slate-600 border border-slate-300";
+      badge.innerText = "○ 시계 숨김 (타종 기준)";
+    }
+  }
+  if (toggle) toggle.checked = isChecked;
+  if (settingsCheck) settingsCheck.checked = isChecked;
+}
+
+function updateClockVisibility() {
+  const clockSection = document.getElementById('clockSection');
+  if (!clockSection) return;
+  
+  const isClassroomOrPreview = (currentRole === 'classroom') || (currentRole === 'teacher' && teacherPreviewMode);
+  if (!isClassroomOrPreview) {
+    clockSection.classList.add('hidden');
+    return;
+  }
+  
+  const shouldShow = currentSchool ? (currentSchool.showClock !== false) : true;
+  if (shouldShow) {
+    clockSection.classList.remove('hidden');
+  } else {
+    clockSection.classList.add('hidden');
+  }
+}
+
 function updateClockAndTimer() {
   destroyCountdownBoxes();
   const now = getNow();
@@ -1238,6 +1283,10 @@ function openSettingsModal() {
   settingsDuration = currentSchool.defaultDuration || 50;
   updateDurationButtonsUI();
   day2WarningShown = false;
+
+  const showClock = currentSchool.showClock !== false;
+  const clockCheckbox = document.getElementById('settingsShowClock');
+  if (clockCheckbox) clockCheckbox.checked = showClock;
 
   // 깊은 복사로 편집 데이터 준비
   if (currentSchool.days && currentSchool.days.length > 0) {
@@ -1556,13 +1605,20 @@ function deletePeriodRow(idx) {
 function saveSettings() {
   saveCurrentTableToMemory();
   const examTitle = document.getElementById('settingExamTitle').value.trim();
+  const clockCheckbox = document.getElementById('settingsShowClock');
+  const showClock = clockCheckbox ? clockCheckbox.checked : true;
 
   api.updateSettings(currentSchool.id, {
     examTitle,
     defaultDuration: settingsDuration,
     currentDayIndex: currentSettingsDayIndex,
-    days: settingsEditingDays
+    days: settingsEditingDays,
+    showClock
   });
+
+  currentSchool.showClock = showClock;
+  updateClockStatusBadge(showClock);
+  updateClockVisibility();
 
   closeSettingsModal();
   alert('모든 일차의 시험 시간표가 저장되었으며, 전체 교실 전자칠판에 실시간 반영되었습니다!');
