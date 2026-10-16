@@ -430,6 +430,26 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 app.use(express.json({ limit: '10mb' }));
 
+// ⚡ 24시간 절전 방지 전용 헬스체크 및 핑 라우트
+// Cloudflare CDN 캐시를 완전히 우회하고 실제 Node.js 백엔드 컨테이너를 직접 깨웁니다.
+app.get(['/ping', '/health', '/healthz', '/api/ping'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.status(200).json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// ⚡ 자체 Keep-Alive 자동 핑 (Render의 15분 절전 타이머가 절대 만료되지 않도록 8분마다 선제 실행)
+const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL || 'https://school-exam-board.onrender.com';
+if (RENDER_EXTERNAL_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${RENDER_EXTERNAL_URL}/ping`);
+      console.log(`[Keep-Alive 핑] ${new Date().toLocaleTimeString('ko-KR')} 서버 활성 유지 호출 완료`);
+    } catch (err) {
+      // ignore
+    }
+  }, 8 * 60 * 1000); // 8분 간격 (15분 절전 방지)
+}
+
 // API: 학교 목록 (민감한 ID나 비밀번호 절대 노출 안 함)
 app.get('/api/schools', (req, res) => {
   const list = Object.values(db.schools).map(s => ({
