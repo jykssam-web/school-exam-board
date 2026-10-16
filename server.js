@@ -407,8 +407,11 @@ setInterval(cleanupOldSchools, 60 * 60 * 1000);
 // 서버 구동 시에도 1회 검사
 cleanupOldSchools();
 
-// 🔒 보안 HTTP 응답 헤더 미들웨어
+// 🔒 보안 및 강력한 브라우저 캐시 방지 미들웨어 (실시간 최신 UI 강제 적용)
 app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -416,7 +419,15 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // API: 학교 목록 (민감한 ID나 비밀번호 절대 노출 안 함)

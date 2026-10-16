@@ -1107,7 +1107,18 @@ function getNow() {
   return new Date();
 }
 
+// ⚡ 교실 화면 남은시간 카운트다운 완전 영구 파괴 (브라우저 캐시 등으로 이전 HTML 요소가 잔존해도 즉각 제거)
+function destroyCountdownBoxes() {
+  document.getElementById('countdownBox')?.remove();
+  document.getElementById('countdownLabel')?.remove();
+  document.getElementById('countdownValue')?.remove();
+  const sep = document.querySelector('#clockSection span.w-px');
+  if (sep) sep.remove();
+}
+destroyCountdownBoxes();
+
 function updateClockAndTimer() {
+  destroyCountdownBoxes();
   const now = getNow();
   
   const hours = String(now.getHours()).padStart(2, '0');
@@ -1148,65 +1159,23 @@ function updateClockAndTimer() {
     }
   }
 
-  const periodStatusEl = document.getElementById('currentPeriodStatus');
-  const countdownLabelEl = document.getElementById('countdownLabel');
-  const countdownValueEl = document.getElementById('countdownValue');
+  // ⚡ 교실 화면 남은시간 카운트다운 완전 영구 파괴 (어떤 캐시 상태에서도 즉시 DOM에서 제거)
+  destroyCountdownBoxes();
 
   if (activePeriod) {
-    if (periodStatusEl) {
-      periodStatusEl.className = "font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded animate-pulse";
-      periodStatusEl.innerText = `● ${activePeriod.name} 시험 진행 중`;
-    }
-
     if (teacherPeriod) {
       teacherPeriod.className = "text-emerald-700 font-black";
       teacherPeriod.innerText = `${activePeriod.name} 진행 중 (${activePeriod.startTime} ~ ${activePeriod.endTime})`;
     }
-
-    const diffSeconds = Math.max(0, Math.floor((activePeriod.endMins - currentMinutes) * 60));
-    const remM = Math.floor(diffSeconds / 60);
-    const remS = diffSeconds % 60;
-    
-    if (countdownLabelEl) countdownLabelEl.innerText = "종료까지";
-    if (countdownValueEl) {
-      countdownValueEl.innerText = `${String(remM).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
-      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-yellow-300 drop-shadow";
-    }
   } else if (nextPeriod) {
-    if (periodStatusEl) {
-      periodStatusEl.className = "font-black text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded";
-      periodStatusEl.innerText = `⏳ 쉬는 시간 (${nextPeriod.name} ${nextPeriod.startTime} 시작)`;
-    }
-
     if (teacherPeriod) {
       teacherPeriod.className = "text-blue-700 font-bold";
       teacherPeriod.innerText = `쉬는 시간 (다음: ${nextPeriod.name} ${nextPeriod.startTime})`;
     }
-
-    const diffSeconds = Math.max(0, Math.floor((nextPeriod.startMins - currentMinutes) * 60));
-    const remM = Math.floor(diffSeconds / 60);
-    const remS = diffSeconds % 60;
-
-    if (countdownLabelEl) countdownLabelEl.innerText = `${nextPeriod.name || '다음'} 시작까지`;
-    if (countdownValueEl) {
-      countdownValueEl.innerText = `${String(remM).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
-      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-slate-300 drop-shadow";
-    }
   } else {
-    if (periodStatusEl) {
-      periodStatusEl.className = "font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded";
-      periodStatusEl.innerText = "오늘 시험 일정 종료";
-    }
-
     if (teacherPeriod) {
       teacherPeriod.className = "text-slate-500 font-medium";
       teacherPeriod.innerText = "오늘 모든 시험 종료";
-    }
-
-    if (countdownLabelEl) countdownLabelEl.innerText = "상태";
-    if (countdownValueEl) {
-      countdownValueEl.innerText = "종료";
-      countdownValueEl.className = "text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-slate-400 drop-shadow";
     }
   }
 
