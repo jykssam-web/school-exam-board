@@ -1801,7 +1801,7 @@ window.addEventListener('keydown', (e) => {
 
 function openNoticeModal() {
   populateNoticePeriods();
-  onNoticeGradeChange();
+  selectNoticeGrade('1');
   removeNoticeImage();
   document.getElementById('noticeModal').classList.remove('hidden');
   document.getElementById('noticeContentInput').focus();
@@ -1889,8 +1889,68 @@ function populateNoticePeriods() {
   onNoticeGradeChange();
 }
 
+// 대상 학년 (1학년 / 2학년 / 3학년 / 전학년) 선택 및 UI 업데이트
+function selectNoticeGrade(grade) {
+  const g = String(grade);
+  const hiddenVal = document.getElementById('noticeTargetGradeValue');
+  if (hiddenVal) hiddenVal.value = g;
+
+  const radios = document.querySelectorAll('input[name="targetGrade"]');
+  radios.forEach(r => {
+    r.checked = (r.value === g);
+  });
+
+  const btn1 = document.getElementById('gradeBtn1');
+  const btn2 = document.getElementById('gradeBtn2');
+  const btn3 = document.getElementById('gradeBtn3');
+  const btnAll = document.getElementById('gradeBtnAll');
+  const badge = document.getElementById('targetGradeBadge');
+
+  const inactiveClass = "flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 font-extrabold text-xs cursor-pointer shadow-2xs transition";
+
+  if (btn1) {
+    btn1.className = (g === '1')
+      ? "flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-blue-600 bg-blue-600 text-white font-black text-xs cursor-pointer shadow-sm ring-2 ring-blue-300 transition"
+      : inactiveClass;
+  }
+  if (btn2) {
+    btn2.className = (g === '2')
+      ? "flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-emerald-600 bg-emerald-600 text-white font-black text-xs cursor-pointer shadow-sm ring-2 ring-emerald-300 transition"
+      : inactiveClass;
+  }
+  if (btn3) {
+    btn3.className = (g === '3')
+      ? "flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-purple-600 bg-purple-600 text-white font-black text-xs cursor-pointer shadow-sm ring-2 ring-purple-300 transition"
+      : inactiveClass;
+  }
+  if (btnAll) {
+    btnAll.className = (g === 'all')
+      ? "flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-amber-600 bg-amber-600 text-white font-black text-xs cursor-pointer shadow-sm ring-2 ring-amber-300 transition"
+      : inactiveClass;
+  }
+
+  if (badge) {
+    if (g === '1') {
+      badge.innerText = '1학년 선택됨';
+      badge.className = 'text-[11px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200';
+    } else if (g === '2') {
+      badge.innerText = '2학년 선택됨';
+      badge.className = 'text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200';
+    } else if (g === '3') {
+      badge.innerText = '3학년 선택됨';
+      badge.className = 'text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200';
+    } else {
+      badge.innerText = '전학년 공통';
+      badge.className = 'text-[11px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200';
+    }
+  }
+
+  onNoticeGradeChange();
+}
+
 function onNoticeGradeChange() {
-  const gradeVal = document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
+  const gradeVal = document.getElementById('noticeTargetGradeValue')?.value ||
+                   document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
   const periodVal = Number(document.getElementById('noticePeriodSelect')?.value || 1);
   const subInput = document.getElementById('noticeSubjectInput');
 
@@ -1928,7 +1988,8 @@ function onNoticePeriodChange() {
 
 function applyTemplate(type) {
   const contentInput = document.getElementById('noticeContentInput');
-  const gradeVal = document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
+  const gradeVal = document.getElementById('noticeTargetGradeValue')?.value ||
+                   document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
   const subjectVal = document.getElementById('noticeSubjectInput').value.trim();
   const prefix = gradeVal === 'all' ? `[전학년 공통]` : `[${gradeVal}학년 ${subjectVal}]`;
 
@@ -1953,7 +2014,8 @@ function applyTemplate(type) {
 
 function handleNoticeSubmit(e) {
   e.preventDefault();
-  const grade = document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
+  const grade = document.getElementById('noticeTargetGradeValue')?.value ||
+                document.querySelector('input[name="targetGrade"]:checked')?.value || '1';
   const period = document.getElementById('noticePeriodSelect').value;
   const subject = document.getElementById('noticeSubjectInput').value.trim();
   const content = document.getElementById('noticeContentInput').value.trim();

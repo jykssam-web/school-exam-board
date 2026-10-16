@@ -10,7 +10,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@0.468.0"></script>
-  <link rel="stylesheet" href="styles.css?v=20261016_v7">
+  <link rel="stylesheet" href="styles.css?v=20261016_v8">
 </head>
 <body class="light-theme min-h-screen flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200">
 
@@ -680,24 +680,29 @@
 
       <form id="noticeForm" class="p-4 flex flex-col gap-3 text-xs" onsubmit="handleNoticeSubmit(event)">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">대상 학년 선택</label>
-          <div class="grid grid-cols-4 gap-1.5">
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition font-bold text-xs">
-              <input type="radio" name="targetGrade" value="1" class="hidden" checked onchange="onNoticeGradeChange()">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-slate-700">대상 학년 선택 <span class="text-rose-500">*</span></label>
+            <span id="targetGradeBadge" class="text-[11px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">1학년 선택됨</span>
+          </div>
+          <input type="hidden" id="noticeTargetGradeValue" value="1">
+          <input type="radio" name="targetGrade" value="1" class="sr-only" checked>
+          <input type="radio" name="targetGrade" value="2" class="sr-only">
+          <input type="radio" name="targetGrade" value="3" class="sr-only">
+          <input type="radio" name="targetGrade" value="all" class="sr-only">
+
+          <div class="grid grid-cols-4 gap-1.5 font-bold text-xs">
+            <button type="button" id="gradeBtn1" onclick="selectNoticeGrade('1')" class="flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-blue-600 bg-blue-600 text-white font-black text-xs cursor-pointer shadow-sm ring-2 ring-blue-300 transition">
               <span>1학년</span>
-            </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-emerald-500 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white transition font-bold text-xs">
-              <input type="radio" name="targetGrade" value="2" class="hidden" onchange="onNoticeGradeChange()">
+            </button>
+            <button type="button" id="gradeBtn2" onclick="selectNoticeGrade('2')" class="flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 font-extrabold text-xs cursor-pointer shadow-2xs transition">
               <span>2학년</span>
-            </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-purple-500 has-[:checked]:bg-purple-600 has-[:checked]:border-purple-600 has-[:checked]:text-white transition font-bold text-xs">
-              <input type="radio" name="targetGrade" value="3" class="hidden" onchange="onNoticeGradeChange()">
+            </button>
+            <button type="button" id="gradeBtn3" onclick="selectNoticeGrade('3')" class="flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 font-extrabold text-xs cursor-pointer shadow-2xs transition">
               <span>3학년</span>
-            </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-amber-500 has-[:checked]:bg-amber-600 has-[:checked]:border-amber-600 has-[:checked]:text-white transition font-bold text-xs">
-              <input type="radio" name="targetGrade" value="all" class="hidden" onchange="onNoticeGradeChange()">
+            </button>
+            <button type="button" id="gradeBtnAll" onclick="selectNoticeGrade('all')" class="flex items-center justify-center py-2.5 px-1 rounded-xl border-2 border-slate-200 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 font-extrabold text-xs cursor-pointer shadow-2xs transition">
               <span>전학년</span>
-            </label>
+            </button>
           </div>
         </div>
 
@@ -935,7 +940,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="api.js?v=20261016_v7"></script>
-  <script src="app.js?v=20261016_v7"></script>
+  <script src="api.js?v=20261016_v8"></script>
+  <script src="app.js?v=20261016_v8"></script>
 </body>
 </html>
