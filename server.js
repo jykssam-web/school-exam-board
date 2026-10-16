@@ -476,12 +476,25 @@ function getLocalIpAddresses() {
 
 // 🏫 [학교 인트라넷 전용] 교사용 컴퓨터 IP 및 교실 전자칠판 접속 안내 API
 app.get('/api/server-info', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+
+  // 클라우드(Render 등) 환경에서는 사설 컨테이너 IP 노출 방지
+  if (process.env.RENDER || process.env.RENDER_EXTERNAL_URL) {
+    return res.json({
+      status: 'ok',
+      isCloud: true,
+      port: currentRunningPort || preferredPort,
+      primaryUrl: process.env.RENDER_EXTERNAL_URL || 'https://school-exam-board.onrender.com',
+      isOfflineReady: false
+    });
+  }
+
   const ips = getLocalIpAddresses();
   const port = currentRunningPort || preferredPort;
   const primaryIp = ips.length > 0 ? ips[0].address : '127.0.0.1';
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.json({
     status: 'ok',
+    isCloud: false,
     port,
     primaryIp,
     primaryUrl: `http://${primaryIp}:${port}`,

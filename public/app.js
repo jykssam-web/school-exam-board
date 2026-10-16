@@ -2202,13 +2202,27 @@ let serverQrCodeInstance = null;
 
 async function initServerInfoBanner() {
   try {
+    const banner = document.getElementById('intranetBanner');
+    const host = window.location.hostname;
+    // Render 클라우드 배포 또는 인터넷 공용 도메인 접속 시에는 내부망 배너 숨김
+    const isCloudHost = host.includes('onrender.com') ||
+      host.includes('lifeforteacher.com') ||
+      (host !== 'localhost' && host !== '127.0.0.1' && !host.startsWith('192.168.') && !host.startsWith('10.') && !host.startsWith('172.'));
+
+    if (isCloudHost) {
+      if (banner) banner.classList.add('hidden');
+      return;
+    }
+
     const res = await fetch('/api/server-info', { cache: 'no-store' });
     if (!res.ok) return;
     const info = await res.json();
-    if (!info || !info.primaryUrl) return;
+    if (!info || info.isCloud || !info.primaryUrl) {
+      if (banner) banner.classList.add('hidden');
+      return;
+    }
 
     serverInfoState = info;
-    const banner = document.getElementById('intranetBanner');
     const display = document.getElementById('intranetIpDisplay');
 
     if (banner && display) {
@@ -2222,7 +2236,14 @@ async function initServerInfoBanner() {
 }
 
 function getClassroomDirectUrl() {
-  let base = serverInfoState && serverInfoState.primaryUrl ? serverInfoState.primaryUrl : window.location.origin;
+  let base = window.location.origin;
+  // 오프라인/로컬 독립 실행형(학교 PC에서 localhost로 직접 구동 시)에만 감지된 교내 LAN 사설 IP 적용
+  if (serverInfoState && !serverInfoState.isCloud && serverInfoState.primaryUrl) {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      base = serverInfoState.primaryUrl;
+    }
+  }
   if (currentSchool && currentSchool.roomCode) {
     return `${base}/?code=${currentSchool.roomCode}`;
   }
@@ -2280,12 +2301,12 @@ function copyClassroomNoticeText() {
 
 ■ 교실 전자칠판 접속 안내:
 1) 전자칠판 브라우저(크롬, 웨일 등) 실행
-2) 주소창에 아래 주소 입력 (또는 연구부 배부 QR 코드 스캔):
+2) 주소창에 아래 주소 입력 (또는 배부된 QR 코드 스캔):
    👉 ${url}
 3) 시험실 코드: [ ${code} ]
 
 ※ 키보드 [F11]을 누르시면 전체화면으로 시원하게 보실 수 있습니다.
-※ 문제 정정사항 발생 시 교무실(연구부)로 전달해 주시면 전 교실 전자칠판에 0.1초 만에 자동 전송됩니다.`;
+※ 문제 정정사항 발생 시 교무실로 전달해 주시면 전 교실 전자칠판에 0.1초 만에 자동 전송됩니다.`;
 
   navigator.clipboard.writeText(text).then(() => {
     alert('교내 메신저(쿨메신저/쪽지) 공지문이 복사되었습니다!\n메신저에 [Ctrl + V] 로 붙여넣으세요.');
