@@ -1956,12 +1956,17 @@ function copyMessengerText() {
 }
 
 function escapeHtml(string) {
-  const entityMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  };
-  return String(string).replace(/[&<>"']/g, s => entityMap[s]);
+  if (!string) return '';
+  // 기존 DB에 저장되어 있을 수 있는 이중 인코딩 엔티티(&quot;, &#39;, &amp; 등) 완벽 복원
+  return String(string)
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    // 악성 스크립트 실행 방지 (XSS 방어)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }

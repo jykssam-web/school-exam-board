@@ -625,17 +625,10 @@ io.on('connection', (socket) => {
     const timetable = currentDay ? currentDay.timetable : (school.timetable || []);
     const periodObj = timetable.find(p => p.period === Number(noticeData.period));
 
-    // 악성 스크립트(XSS) 방지 및 길이 정제
-    const sanitizedContent = String(noticeData.content || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .slice(0, 1000);
-
-    const sanitizedSubject = String(noticeData.subject || '').replace(/[<>]/g, '').slice(0, 50);
-    const sanitizedTeacher = String(noticeData.teacher || '출제교사').replace(/[<>]/g, '').slice(0, 30);
+    // 텍스트 길이 정제 (프론트엔드 렌더링 시 안전하게 이스케이프 처리)
+    const sanitizedContent = String(noticeData.content || '').slice(0, 1000);
+    const sanitizedSubject = String(noticeData.subject || '').slice(0, 50);
+    const sanitizedTeacher = String(noticeData.teacher || '출제교사').slice(0, 30);
 
     const newNotice = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
