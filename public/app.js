@@ -737,6 +737,13 @@ function renderTeacherTodayTimetable() {
       </tr>
     `;
   }).join('');
+
+  const shareCodeEl = document.getElementById('shareRoomCode');
+  if (shareCodeEl && currentSchool.roomCode) {
+    shareCodeEl.innerText = currentSchool.roomCode;
+  }
+
+  if (window.lucide) lucide.createIcons();
 }
 
 function updateHeaderDaySelector() {

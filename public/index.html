@@ -205,16 +205,11 @@
 
       <!-- 중앙: [3배 초대형 전광판] 현재 시각 & 종료까지 남은 시간 -->
       <div class="flex items-center gap-2 shrink-0 my-auto">
-        <!-- 교실 모드: 3배 초대형 전광판 시계 & 남은 시간 -->
-        <div id="clockSection" class="flex items-center gap-4 md:gap-7 bg-black/95 text-white px-5 md:px-8 py-1 md:py-1.5 rounded-2xl shadow-xl border-2 border-slate-700">
+        <!-- 교실 모드: 3배 초대형 전광판 시계 (남은시간 제거, 현재 시각 전용) -->
+        <div id="clockSection" class="flex items-center bg-black/95 text-white px-6 md:px-10 py-1 md:py-1.5 rounded-2xl shadow-xl border-2 border-slate-700">
           <div class="flex flex-col items-center">
             <span class="text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-slate-400">현재 시각</span>
             <span id="digitalClock" class="text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-white drop-shadow">00:00:00</span>
-          </div>
-          <span class="w-px h-8 md:h-12 bg-slate-700"></span>
-          <div id="countdownBox" class="flex flex-col items-center">
-            <span id="countdownLabel" class="text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-amber-400">종료까지</span>
-            <span id="countdownValue" class="text-3xl md:text-5xl lg:text-6xl font-black font-mono tracking-tight text-yellow-300 drop-shadow">--:--</span>
           </div>
         </div>
 
@@ -227,7 +222,7 @@
         </div>
       </div>
 
-      <!-- 우측: 6자리 코드, 모드 뱃지, 교사 컨트롤, 도구 버튼들 -->
+      <!-- 우측: 6자리 코드, 모드 뱃지, 도구 버튼들 -->
       <div class="flex items-center gap-1.5 shrink-0">
         <span id="headerRoomCodeBadge" class="text-xs font-black px-2 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-mono shrink-0">
           코드: 000000
@@ -243,17 +238,8 @@
           <div id="hiddenGradesChips" class="flex items-center gap-1"></div>
         </div>
 
-        <!-- 관리자 모드 전용 컨트롤 -->
-        <div id="teacherControls" class="hidden flex items-center gap-1.5 shrink-0">
-          <button onclick="openSettingsModal()" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-300 transition shadow-xs">
-            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-            <span>시간표 세팅</span>
-          </button>
-          <button onclick="openNoticeModal()" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-xs border border-red-500 transition">
-            <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
-            <span>정정 등록</span>
-          </button>
-        </div>
+        <!-- 관리자 모드 전용 컨트롤 (상단 간소화) -->
+        <div id="teacherControls" class="hidden"></div>
 
         <!-- 공통 버튼들 -->
         <button id="themeToggleBtn" onclick="toggleTheme()" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs border border-slate-300 transition shrink-0" title="화면 모드 전환">
@@ -274,31 +260,9 @@
     <main class="flex-1 min-h-0 w-full overflow-hidden flex flex-col p-2.5 md:p-3">
       
       <!-- ================= 1. 교사용 담백 깔끔 관리자 콘솔 대시보드 ================= -->
-      <div id="teacherDashboardView" class="hidden flex-1 min-h-0 overflow-hidden flex flex-col gap-2.5">
+      <div id="teacherDashboardView" class="hidden flex-1 min-h-0 overflow-hidden flex flex-col">
         
-        <!-- 교사용 입장 코드 & 원클릭 공유 툴바 (담백한 1줄 툴바) -->
-        <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs shadow-xs">
-          <div class="flex items-center gap-2 text-slate-800">
-            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-            <span><strong>📢 교실 전자칠판 입장 코드:</strong> [ <code id="shareRoomCode" class="bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono text-amber-950 font-black text-sm">000000</code> ]</span>
-          </div>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <button onclick="copyDirectClassUrl()" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs transition">
-              📋 칠판 링크 복사
-            </button>
-            <button onclick="copyMessengerText()" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold transition">
-              💬 메신저 공지문 복사
-            </button>
-            <button onclick="copyAdminBookmarkUrl()" class="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold shadow-xs transition">
-              ⭐️ 관리자 북마크 복사
-            </button>
-            <button onclick="toggleClassroomPreview()" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-black shadow-xs transition flex items-center gap-1">
-              <i data-lucide="monitor" class="w-3.5 h-3.5 text-cyan-400"></i> 교실 칠판 미리보기
-            </button>
-          </div>
-        </div>
-
-        <!-- 2분할 관리 센터 (좌: 실시간 정정사항 관리 / 우: 오늘 시간표 요약) -->
+        <!-- 2분할 관리 센터 (좌: 실시간 정정사항 관리 / 우: 오늘 시간표 요약 및 교실 연동 관리) -->
         <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
           
           <!-- 좌측: 실시간 정정사항 관리 목록 (7단) -->
@@ -320,37 +284,83 @@
             </div>
           </div>
 
-          <!-- 우측: 오늘 시험 시간표 요약 (5단) -->
-          <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl shadow-xs p-3.5 flex flex-col min-h-0 h-full">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
-              <div class="flex items-center gap-2">
-                <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="calendar" class="w-4 h-4"></i></span>
-                <h3 class="text-sm md:text-base font-black text-slate-900">오늘 시험 시간표</h3>
-                <span id="teacherTodayDayTitle" class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">1일차</span>
+          <!-- 우측: 오늘 시험 시간표 & 교실 연동 관리 (5단) -->
+          <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl shadow-xs p-3.5 flex flex-col min-h-0 h-full justify-between gap-3">
+            
+            <!-- 상단: 오늘 시험 시간표 요약 -->
+            <div class="flex flex-col min-h-0 flex-1">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
+                <div class="flex items-center gap-2">
+                  <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="calendar" class="w-4 h-4"></i></span>
+                  <h3 class="text-sm md:text-base font-black text-slate-900">오늘 시험 시간표</h3>
+                  <span id="teacherTodayDayTitle" class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">1일차</span>
+                </div>
+                <button onclick="openSettingsModal()" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition flex items-center gap-1 shadow-xs">
+                  <i data-lucide="settings" class="w-3.5 h-3.5"></i> 시간표 세팅
+                </button>
               </div>
-              <button onclick="openSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300 transition flex items-center gap-1">
-                <i data-lucide="settings" class="w-3.5 h-3.5"></i> 시간표 세팅
-              </button>
+
+              <!-- 시간표 요약 테이블 -->
+              <div class="border border-slate-200 rounded-lg mt-2 overflow-y-auto flex-1 min-h-0">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold sticky top-0 z-10">
+                    <tr>
+                      <th class="py-2 px-2 text-center w-12">교시</th>
+                      <th class="py-2 px-2 text-center">시험 시간</th>
+                      <th class="py-2 px-1.5 text-blue-700 font-extrabold">1학년</th>
+                      <th class="py-2 px-1.5 text-emerald-700 font-extrabold">2학년</th>
+                      <th class="py-2 px-1.5 text-purple-700 font-extrabold">3학년</th>
+                      <th class="py-2 px-1.5 text-center w-12">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teacherTimetableBody" class="divide-y divide-slate-100">
+                    <!-- JS 동적 렌더링 -->
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- 시간표 요약 테이블 -->
-            <div class="flex-1 min-h-0 overflow-y-auto border border-slate-200 rounded-lg mt-2.5">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold sticky top-0 z-10">
-                  <tr>
-                    <th class="py-2 px-2.5 text-center w-14">교시</th>
-                    <th class="py-2 px-2.5 text-center">시험 시간</th>
-                    <th class="py-2 px-2 text-blue-700 font-extrabold">1학년</th>
-                    <th class="py-2 px-2 text-emerald-700 font-extrabold">2학년</th>
-                    <th class="py-2 px-2 text-purple-700 font-extrabold">3학년</th>
-                    <th class="py-2 px-2 text-center w-14">상태</th>
-                  </tr>
-                </thead>
-                <tbody id="teacherTimetableBody" class="divide-y divide-slate-100">
-                  <!-- JS 동적 렌더링 -->
-                </tbody>
-              </table>
+            <!-- 하단: 교실 전자칠판 연동 & 공유 빠른 작업 (시험시간표 하단 공간 100% 활용) -->
+            <div class="border-t border-slate-100 pt-3 flex flex-col gap-2.5 shrink-0">
+              
+              <!-- 교실 입장 코드 & 칠판 링크 복사 -->
+              <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div class="flex items-center gap-1.5 text-[11px] font-bold text-amber-900">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>교실 전자칠판 입장 코드</span>
+                  </div>
+                  <div class="mt-0.5 flex items-baseline gap-2">
+                    <code id="shareRoomCode" class="text-2xl font-black font-mono tracking-widest text-amber-950">000000</code>
+                    <span class="text-[10px] text-amber-700 font-medium">각 반 학생 칠판용</span>
+                  </div>
+                </div>
+                <button onclick="copyDirectClassUrl()" class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-xs transition flex items-center gap-1.5">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>칠판 링크 복사</span>
+                </button>
+              </div>
+
+              <!-- 교실 칠판 미리보기 (전체 너비 버튼) -->
+              <button onclick="toggleClassroomPreview()" class="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-xs transition flex items-center justify-center gap-2">
+                <i data-lucide="monitor" class="w-4 h-4 text-cyan-400"></i>
+                <span>🖥️ 교실 전자칠판 화면 미리보기</span>
+              </button>
+
+              <!-- 메신저 공지문 & 관리자 북마크 복사 (2분할 버튼) -->
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="copyMessengerText()" class="py-2 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs" title="교직원 단톡방/메신저에 보낼 안내문 복사">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-blue-600"></i>
+                  <span>메신저 공지 복사</span>
+                </button>
+                <button onclick="copyAdminBookmarkUrl()" class="py-2 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs" title="관리자 모드 바로가기 북마크 링크 복사">
+                  <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-600"></i>
+                  <span>관리자 북마크 복사</span>
+                </button>
+              </div>
+
             </div>
+
           </div>
 
         </div>
