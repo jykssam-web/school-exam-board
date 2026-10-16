@@ -2,7 +2,7 @@
    전국 학교 실시간 시험상황실 스타일 (고딕체 & 담백 깔끔 UI)
    ============================================================== */
 
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+@import url('vendor/pretendard.css');
 
 :root {
   --bg-primary: #f8fafc;

@@ -34,6 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
   fetchSchoolList();
   checkRecentSchool();
   checkUrlParamsForAutoJoin();
+  initServerInfoBanner();
   updateSoundUI();
   updateClockAndTimer();
   setInterval(updateClockAndTimer, 1000);
@@ -164,7 +165,7 @@ function checkUrlParamsForAutoJoin() {
   }
 }
 
-// 로비 3개 탭 전환: code(교실 코드입장) / admin(연구부장 로그인) / create(새 학교 개설)
+// 로비 3개 탭 전환: code(교실 코드입장) / admin(교사용 로그인) / create(새 학교 개설)
 function switchLobbyTab(tab) {
   const codeTab = document.getElementById('codeTabContent');
   const adminTab = document.getElementById('adminTabContent');
@@ -359,7 +360,7 @@ function checkRecentSchool() {
     const infoEl = document.getElementById('recentSchoolInfo');
     if (nameEl) nameEl.innerText = recent.name;
     if (infoEl) {
-      infoEl.innerText = `코드: ${recent.roomCode || '------'} · ${recent.role === 'teacher' ? '연구부장 관리자 모드' : '교실 칠판 열람 모드'}`;
+      infoEl.innerText = `코드: ${recent.roomCode || '------'} · ${recent.role === 'teacher' ? '교사용 모드' : '교실 칠판 열람 모드'}`;
     }
     banner.classList.remove('hidden');
   } catch (e) {
@@ -603,10 +604,16 @@ function enterExamBoard(school, role, passwords = {}) {
 
   if (previewBanner) previewBanner.classList.add('hidden');
 
+  const headerShareBtn = document.getElementById('headerShareBtn');
+
   if (role === 'teacher') {
     if (roleBadge) {
       roleBadge.className = "inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-900 text-white shadow-xs shrink-0";
       roleBadge.innerHTML = '● 관리 모드';
+    }
+    if (headerShareBtn) {
+      headerShareBtn.classList.remove('hidden');
+      headerShareBtn.classList.add('inline-flex');
     }
     if (teacherControls) teacherControls.classList.remove('hidden');
     if (teacherNoticeBar) teacherNoticeBar.classList.remove('hidden');
@@ -627,6 +634,10 @@ function enterExamBoard(school, role, passwords = {}) {
     if (roleBadge) {
       roleBadge.className = "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200 shrink-0";
       roleBadge.innerHTML = '● 교실 칠판';
+    }
+    if (headerShareBtn) {
+      headerShareBtn.classList.add('hidden');
+      headerShareBtn.classList.remove('inline-flex');
     }
     if (teacherControls) teacherControls.classList.add('hidden');
     if (teacherNoticeBar) teacherNoticeBar.classList.add('hidden');
@@ -2137,7 +2148,7 @@ function copyAdminBookmarkUrl() {
   const code = currentSchool.roomCode || '';
   const url = `${getBaseUrl()}?adminCode=${code}`;
   navigator.clipboard.writeText(url).then(() => {
-    alert(`연구부장(관리자) 전용 즐겨찾기 URL이 복사되었습니다!\n\n${url}\n\n이 주소를 브라우저 북마크에 등록해두시면 학교 검색 없이 바로 관리자 로그인 화면으로 연결됩니다.`);
+    alert(`교사용 전용 즐겨찾기 URL이 복사되었습니다!\n\n${url}\n\n이 주소를 브라우저 북마크에 등록해두시면 학교 검색 없이 바로 로그인 화면으로 연결됩니다.`);
   }).catch(() => prompt('아래 주소를 복사하여 브라우저 북마크에 추가하세요:', url));
 }
 
@@ -2182,3 +2193,104 @@ function escapeHtml(string) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+// ==============================================================
+// 🏫 [학교 인트라넷/독립형 전용] 서버 정보 감지 및 전자칠판 QR 연동
+// ==============================================================
+let serverInfoState = null;
+let serverQrCodeInstance = null;
+
+async function initServerInfoBanner() {
+  try {
+    const res = await fetch('/api/server-info', { cache: 'no-store' });
+    if (!res.ok) return;
+    const info = await res.json();
+    if (!info || !info.primaryUrl) return;
+
+    serverInfoState = info;
+    const banner = document.getElementById('intranetBanner');
+    const display = document.getElementById('intranetIpDisplay');
+
+    if (banner && display) {
+      display.innerText = info.primaryUrl;
+      banner.classList.remove('hidden');
+      if (window.lucide && lucide.createIcons) lucide.createIcons();
+    }
+  } catch (err) {
+    // 외부 웹 클라우드 배포 등 API 미지원 환경에서는 무시
+  }
+}
+
+function getClassroomDirectUrl() {
+  let base = serverInfoState && serverInfoState.primaryUrl ? serverInfoState.primaryUrl : window.location.origin;
+  if (currentSchool && currentSchool.roomCode) {
+    return `${base}/?code=${currentSchool.roomCode}`;
+  }
+  return base;
+}
+
+function openServerQrModal() {
+  const modal = document.getElementById('serverQrModal');
+  const canvasContainer = document.getElementById('serverQrCanvas');
+  const urlDisplay = document.getElementById('serverQrUrlText');
+  if (!modal || !canvasContainer) return;
+
+  const targetUrl = getClassroomDirectUrl();
+  if (urlDisplay) urlDisplay.innerText = targetUrl;
+
+  canvasContainer.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    serverQrCodeInstance = new QRCode(canvasContainer, {
+      text: targetUrl,
+      width: 200,
+      height: 200,
+      colorDark: '#0f172a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    canvasContainer.innerHTML = `<div class="p-4 text-xs text-slate-500 font-bold">${targetUrl}</div>`;
+  }
+
+  modal.classList.remove('hidden');
+  if (window.lucide && lucide.createIcons) lucide.createIcons();
+}
+
+function closeServerQrModal() {
+  const modal = document.getElementById('serverQrModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyClassroomUrl() {
+  const url = getClassroomDirectUrl();
+  navigator.clipboard.writeText(url).then(() => {
+    alert(`[전자칠판 접속 주소 복사 완료]\n\n${url}\n\n교내 메신저나 전자칠판 브라우저에 붙여넣어 주세요.`);
+  }).catch(() => {
+    prompt('아래 주소를 복사하세요:', url);
+  });
+}
+
+function copyClassroomNoticeText() {
+  const code = currentSchool ? currentSchool.roomCode : '------';
+  const url = getClassroomDirectUrl();
+  const schoolName = currentSchool ? currentSchool.name : '우리 학교';
+
+  const text = `[📢 ${schoolName} 정기고사 실시간 시험상황실 알림]
+선생님, 오늘 시험 정정사항 및 시간표는 각 교실 전자칠판으로 실시간 동기화됩니다.
+
+■ 교실 전자칠판 접속 안내:
+1) 전자칠판 브라우저(크롬, 웨일 등) 실행
+2) 주소창에 아래 주소 입력 (또는 연구부 배부 QR 코드 스캔):
+   👉 ${url}
+3) 시험실 코드: [ ${code} ]
+
+※ 키보드 [F11]을 누르시면 전체화면으로 시원하게 보실 수 있습니다.
+※ 문제 정정사항 발생 시 교무실(연구부)로 전달해 주시면 전 교실 전자칠판에 0.1초 만에 자동 전송됩니다.`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert('교내 메신저(쿨메신저/쪽지) 공지문이 복사되었습니다!\n메신저에 [Ctrl + V] 로 붙여넣으세요.');
+  }).catch(() => {
+    prompt('아래 문구를 복사하여 메신저에 붙여넣으세요:', text);
+  });
+}
+

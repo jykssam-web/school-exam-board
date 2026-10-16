@@ -15,7 +15,25 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3019;
-const DATA_FILE = path.join(__dirname, 'data', 'schools-database.json');
+
+// 💾 데이터베이스 저장 경로 자동 결정 (Electron 포터블 및 일반 Node.js 완벽 호환)
+function resolveDataFilePath() {
+  if (process.env.DATA_FILE_PATH) return process.env.DATA_FILE_PATH;
+  if (__dirname.includes('app.asar')) {
+    const portableDataDir = path.join(path.dirname(process.execPath), 'data');
+    try {
+      if (!fs.existsSync(portableDataDir)) fs.mkdirSync(portableDataDir, { recursive: true });
+      return path.join(portableDataDir, 'schools-database.json');
+    } catch (e) {
+      const fallbackDir = path.join(process.env.APPDATA || os.homedir(), 'school-exam-board', 'data');
+      if (!fs.existsSync(fallbackDir)) fs.mkdirSync(fallbackDir, { recursive: true });
+      return path.join(fallbackDir, 'schools-database.json');
+    }
+  }
+  return path.join(__dirname, 'data', 'schools-database.json');
+}
+
+const DATA_FILE = resolveDataFilePath();
 
 // ==============================================================
 // 🔒 보안 유틸리티: scrypt 비밀번호 해싱 및 타이밍 공격 방지
@@ -437,9 +455,46 @@ app.get(['/ping', '/health', '/healthz', '/api/ping'], (req, res) => {
   res.status(200).json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// ⚡ 자체 Keep-Alive 자동 핑 (Render의 15분 절전 타이머가 절대 만료되지 않도록 8분마다 선제 실행)
-const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL || 'https://school-exam-board.onrender.com';
-if (RENDER_EXTERNAL_URL) {
+// ⚡ 교내 LAN 사설 IP 자동 감지 유틸리티
+function getLocalIpAddresses() {
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+  for (const name of Object.keys(interfaces)) {
+    for (const netInfo of interfaces[name]) {
+      if (netInfo.family === 'IPv4' && !netInfo.internal) {
+        ips.push({ interface: name, address: netInfo.address });
+      }
+    }
+  }
+  // 192.168.x.x, 10.x.x.x, 172.x.x.x 학교 인트라넷 대역 우선 정렬
+  ips.sort((a, b) => {
+    const isPrivate = addr => /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01]))/.test(addr);
+    return (isPrivate(b.address) ? 1 : 0) - (isPrivate(a.address) ? 1 : 0);
+  });
+  return ips;
+}
+
+// 🏫 [학교 인트라넷 전용] 교사용 컴퓨터 IP 및 교실 전자칠판 접속 안내 API
+app.get('/api/server-info', (req, res) => {
+  const ips = getLocalIpAddresses();
+  const port = currentRunningPort || preferredPort;
+  const primaryIp = ips.length > 0 ? ips[0].address : '127.0.0.1';
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.json({
+    status: 'ok',
+    port,
+    primaryIp,
+    primaryUrl: `http://${primaryIp}:${port}`,
+    allIps: ips.map(i => i.address),
+    classroomUrls: ips.map(i => `http://${i.address}:${port}`),
+    isOfflineReady: true,
+    serverTime: new Date().toISOString()
+  });
+});
+
+// ⚡ 클라우드(Render) 배포 시에만 작동하는 Keep-Alive 자동 핑 (로컬 독립형에서는 불필요한 네트워크 차단)
+if (process.env.RENDER || process.env.ENABLE_RENDER_PING === 'true') {
+  const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL || 'https://school-exam-board.onrender.com';
   setInterval(async () => {
     try {
       await fetch(`${RENDER_EXTERNAL_URL}/ping`);
@@ -447,7 +502,7 @@ if (RENDER_EXTERNAL_URL) {
     } catch (err) {
       // ignore
     }
-  }, 8 * 60 * 1000); // 8분 간격 (15분 절전 방지)
+  }, 8 * 60 * 1000);
 }
 
 // API: 학교 목록 (민감한 ID나 비밀번호 절대 노출 안 함)
@@ -810,12 +865,41 @@ function findAvailablePort(startPort, callback) {
   tester.listen(startPort, '0.0.0.0');
 }
 
-loadDatabase();
+let currentRunningPort = Number(process.env.PORT) || 3019;
+const preferredPort = currentRunningPort;
 
-const preferredPort = Number(process.env.PORT) || 3019;
-findAvailablePort(preferredPort, (err, availablePort) => {
-  if (err) return console.error(err);
-  server.listen(availablePort, '0.0.0.0', () => {
-    console.log(`🌐 [날짜별 시간표 & 자동 연산 지원] 서버 실행: http://localhost:${availablePort}`);
+function startServer(port = currentRunningPort) {
+  return new Promise((resolve, reject) => {
+    loadDatabase();
+    findAvailablePort(port, (err, availablePort) => {
+      if (err) return reject(err);
+      currentRunningPort = availablePort;
+      server.listen(availablePort, '0.0.0.0', () => {
+        const ips = getLocalIpAddresses();
+        console.log(`========================================================`);
+        console.log(`🏫 [학교 실시간 시험상황실 & 전자칠판 시스템] 서버 가동`);
+        console.log(`   - 교사용 PC 모드: http://localhost:${availablePort}`);
+        if (ips.length > 0) {
+          console.log(`   - 교실 전자칠판 접속: http://${ips[0].address}:${availablePort}`);
+        }
+        console.log(`========================================================`);
+        resolve({ port: availablePort, server, ips });
+      });
+    });
   });
-});
+}
+
+if (require.main === module) {
+  startServer(preferredPort).catch(err => {
+    console.error('서버 기동 실패:', err);
+  });
+}
+
+module.exports = {
+  app,
+  server,
+  io,
+  startServer,
+  getLocalIpAddresses,
+  getCurrentPort: () => currentRunningPort
+};

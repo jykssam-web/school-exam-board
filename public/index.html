@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>전국 학교 실시간 시험상황실 | LifeForTeacher.com</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Tailwind CSS (오프라인 학교 내부망 100% 지원 로컬 번들) -->
+  <script src="vendor/tailwind.3.4.17.js"></script>
   <!-- Pretendard Korean Gothic Web Font -->
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@0.468.0"></script>
-  <link rel="stylesheet" href="styles.css?v=20261016_v8">
+  <link rel="stylesheet" href="vendor/pretendard.css">
+  <!-- Lucide Icons (오프라인 학교 내부망 100% 지원 로컬 번들) -->
+  <script src="vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="styles.css?v=20261016_v9">
 </head>
 <body class="light-theme min-h-screen flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200">
 
@@ -33,6 +33,35 @@
       <p class="text-sm text-slate-600 text-center mb-5">
         교실 전자칠판으로 시험 문제 정정사항과 시간표를 실시간 전송합니다.
       </p>
+
+      <!-- 🏫 [학교 인트라넷/독립형 전용] 교실 전자칠판 연동 안내 배너 -->
+      <div id="intranetBanner" class="hidden w-full mb-4 bg-white border-2 border-emerald-400 rounded-2xl p-3.5 shadow-md flex items-center justify-between gap-3 animate-in fade-in">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="p-2 bg-emerald-600 text-white rounded-xl shrink-0 shadow-sm">
+            <i data-lucide="wifi" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">교내망 실시간 서버</span>
+              <span class="text-[11px] font-bold text-slate-500">인터넷 단선 무관</span>
+            </div>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-xs text-slate-500 font-bold shrink-0">전자칠판 접속:</span>
+              <span id="intranetIpDisplay" class="font-mono font-black text-xs md:text-sm text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 truncate select-all">http://...</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button onclick="openServerQrModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-300 shadow-sm" title="교실 전자칠판 카메라 스캔용 QR">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span class="hidden sm:inline">QR 코드</span>
+          </button>
+          <button onclick="copyClassroomUrl()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow transition flex items-center gap-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>주소 복사</span>
+          </button>
+        </div>
+      </div>
 
       <!-- 📌 관리자/교사용 최근 방문 시험실 바로가기 배너 (있을 때 자동 노출) -->
       <div id="recentSchoolBanner" class="hidden w-full mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-4 shadow-sm flex items-center justify-between">
@@ -61,7 +90,7 @@
             <i data-lucide="hash" class="w-3.5 h-3.5"></i> 교실 코드입장
           </button>
           <button id="tabAdminBtn" onclick="switchLobbyTab('admin')" class="py-2.5 rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-            <i data-lucide="lock" class="w-3.5 h-3.5"></i> 연구부장 로그인
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i> 교사용 로그인
           </button>
           <button id="tabCreateBtn" onclick="switchLobbyTab('create')" class="py-2.5 rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
             <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 시험실 개설
@@ -81,7 +110,7 @@
           </button>
         </div>
 
-        <!-- 탭 2: 연구부장(관리자) 로그인 -->
+        <!-- 탭 2: 교사용 모드 로그인 -->
         <div id="adminTabContent" class="hidden flex flex-col gap-4 text-sm">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">우리 학교 6자리 입장 코드</label>
@@ -89,16 +118,16 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용(관리자) 비밀번호</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용 비밀번호</label>
             <input type="password" id="adminPasswordInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="개설 시 설정한 교사용 비밀번호">
           </div>
 
           <button onclick="handleEnterByCode('teacher')" class="mt-2 w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
-            <i data-lucide="key" class="w-5 h-5 text-amber-400"></i> 연구부장 관리자 모드로 입장
+            <i data-lucide="key" class="w-5 h-5 text-amber-400"></i> 교사용 모드로 입장
           </button>
         </div>
 
-        <!-- 탭 3: 새 학교 개설하기 폼 (연구부장용) -->
+        <!-- 탭 3: 새 학교 개설하기 폼 (교사용) -->
         <div id="createTabContent" class="hidden flex flex-col gap-4 text-sm">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div>
@@ -156,7 +185,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용(관리자) 비밀번호 <span class="text-rose-500">*</span></label>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용 비밀번호 <span class="text-rose-500">*</span></label>
             <input type="text" id="createTeacherPass" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-blue-500 font-mono font-bold text-base" placeholder="4자리 이상 숫자/영문 (예: 7777)">
             <p class="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
               <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
@@ -231,6 +260,12 @@
         <span id="headerRoomCodeBadge" class="text-xs font-black px-2 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-mono shrink-0">
           코드: 000000
         </span>
+
+        <!-- 🏫 교사용 인트라넷 전자칠판 연동 버튼 -->
+        <button id="headerShareBtn" onclick="openServerQrModal()" class="hidden items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition shrink-0 shadow-sm" title="교실 전자칠판 연동 QR 및 접속 주소 복사">
+          <i data-lucide="share-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span class="hidden md:inline">칠판 연동</span>
+        </button>
 
         <span id="roleBadge" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-slate-200 text-slate-800 shrink-0">
           교실 모드
@@ -636,7 +671,7 @@
               <span class="p-1 bg-purple-100 text-purple-700 rounded font-black text-xs">3</span>
               <div>
                 <strong class="text-slate-800">최근 관리한 시험실 자동 기억:</strong>
-                <p class="text-slate-500 mt-0.5">연구부장님 컴퓨터에서는 사이트 첫 화면에 '최근 관리 시험실 바로가기'가 자동으로 뜨므로 검색 없이 1초 만에 입장됩니다.</p>
+                <p class="text-slate-500 mt-0.5">선생님 컴퓨터에서는 사이트 첫 화면에 '최근 관리 시험실 바로가기'가 자동으로 뜨므로 검색 없이 1초 만에 입장됩니다.</p>
               </div>
             </div>
             <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5">
@@ -939,8 +974,52 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: 전자칠판 연결 QR 코드 안내 ================= -->
+  <div id="serverQrModal" class="modal-overlay hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center relative animate-in fade-in zoom-in-95 duration-200" onclick="event.stopPropagation()">
+      <button onclick="closeServerQrModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="w-12 h-12 mx-auto mb-3 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+        <i data-lucide="qr-code" class="w-6 h-6"></i>
+      </div>
+
+      <h3 class="text-lg font-black text-slate-900 mb-1">교실 전자칠판 실시간 연동</h3>
+      <p class="text-xs text-slate-500 mb-4">
+        학교 내부망(Wi-Fi/LAN)에 연결된 전자칠판 카메라로 비추면 바로 열립니다.
+      </p>
+
+      <!-- QR 코드 렌더링 영역 -->
+      <div class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-blue-200 inline-block mb-4 shadow-inner">
+        <div id="serverQrCanvas" class="flex justify-center items-center min-w-[200px] min-h-[200px]"></div>
+      </div>
+
+      <!-- 접속 URL 및 복사 -->
+      <div class="bg-slate-100 border border-slate-200 rounded-xl p-3 mb-4 text-left">
+        <div class="text-[11px] font-bold text-slate-500 mb-1 flex items-center justify-between">
+          <span>전자칠판 브라우저 접속 주소</span>
+          <span class="text-emerald-600 font-extrabold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">교내망 실시간 전송</span>
+        </div>
+        <div id="serverQrUrlText" class="font-mono font-black text-sm text-blue-700 select-all break-all">-</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="copyClassroomNoticeText()" class="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-black text-white font-extrabold text-xs shadow transition flex items-center justify-center gap-1.5">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span>메신저 공지문 복사</span>
+        </button>
+        <button onclick="copyClassroomUrl()" class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow transition flex items-center justify-center gap-1.5">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          <span>접속 주소만 복사</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="api.js?v=20261016_v8"></script>
-  <script src="app.js?v=20261016_v8"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="api.js?v=20261016_v9"></script>
+  <script src="app.js?v=20261016_v9"></script>
 </body>
 </html>

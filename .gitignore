@@ -10,3 +10,7 @@ Thumbs.db
 # 🔒 학교별 시험 데이터 영속 파일 (깃허브 공개 시 절대 유출되지 않도록 차단)
 data/*.json
 !data/.gitkeep
+
+# 📦 전자 프로그램 빌드 배포 폴더
+release/
+
