@@ -380,22 +380,17 @@ function generateUniqueSchoolName(baseName) {
   return `${cleanBase} (${counter})`;
 }
 
-// API: 새 학교 개설 (비밀번호 scrypt 솔트 해싱 저장 및 최소 4자리 검증)
+// API: 새 학교 개설 (교사용 관리자 비밀번호 1개로 개설, 최소 4자리 검증)
 app.post('/api/schools/create', (req, res) => {
   const { region, name, teacherPass, classPass, examTitle, defaultDuration } = req.body;
-  if (!name || !teacherPass || !classPass) {
-    return res.status(400).json({ error: '학교명과 비밀번호는 필수입니다.' });
+  if (!name || !teacherPass) {
+    return res.status(400).json({ error: '학교명과 교사용 비밀번호는 필수입니다.' });
   }
 
   const strTeacherPass = String(teacherPass).trim();
-  const strClassPass = String(classPass).trim();
 
   if (strTeacherPass.length < 4) {
     return res.status(400).json({ error: '보안을 위해 교사용 비밀번호는 최소 4자리 이상으로 설정해 주세요.' });
-  }
-
-  if (strTeacherPass === strClassPass) {
-    return res.status(400).json({ error: '교사용 비밀번호와 학생(교실)용 비밀번호는 서로 다르게 입력해야 합니다.' });
   }
 
   const selectedRegion = region ? region.trim() : "경기";
@@ -415,7 +410,7 @@ app.post('/api/schools/create', (req, res) => {
     name: finalSchoolName,
     rawName: name.trim(),
     teacherPass: hashPassword(strTeacherPass), // 🔒 scrypt 단방향 암호화
-    classPass: hashPassword(strClassPass),     // 🔒 scrypt 단방향 암호화
+    classPass: classPass ? hashPassword(String(classPass).trim()) : '', // 교실은 6자리 입장 코드로 직행
     examTitle: examTitle ? String(examTitle).trim().slice(0, 50) : "2026학년도 2학기 중간고사",
     defaultDuration: durationNum,
     currentDayIndex: 0,

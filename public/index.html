@@ -151,23 +151,13 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-rose-600 mb-1.5">교사용 비밀번호 <span class="text-rose-500">*</span></label>
-              <input type="text" id="createTeacherPass" oninput="checkPasswordMismatch()" class="w-full bg-rose-50 border border-rose-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-rose-500 font-mono font-bold" placeholder="예: 7777">
-              <span class="text-[11px] text-slate-500 mt-1 block">시간표/정정 관리자용</span>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-emerald-600 mb-1.5">학생(교실)용 비밀번호 <span class="text-emerald-500">*</span></label>
-              <input type="text" id="createClassPass" oninput="checkPasswordMismatch()" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-500 font-mono font-bold" placeholder="예: 1234">
-              <span class="text-[11px] text-slate-500 mt-1 block">전자칠판 학생 열람 전용</span>
-            </div>
-          </div>
-
-          <!-- 두 비밀번호 동일 시 경고 메시지 -->
-          <div id="passwordMismatchWarning" class="hidden text-xs font-extrabold text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-300 flex items-center gap-1.5 animate-pulse">
-            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
-            <span>⚠️ 교사용 비밀번호와 학생용 비밀번호는 반드시 서로 다르게 설정해야 합니다!</span>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">교사용(관리자) 비밀번호 <span class="text-rose-500">*</span></label>
+            <input type="text" id="createTeacherPass" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-blue-500 font-mono font-bold text-base" placeholder="4자리 이상 숫자/영문 (예: 7777)">
+            <p class="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+              <span>시간표 수정 및 문제 정정 등록 시 사용됩니다. (교실 칠판은 6자리 입장 코드로 바로 접속하므로 교실 비밀번호가 필요 없습니다)</span>
+            </p>
           </div>
 
           <button onclick="handleCreateSchool()" class="mt-2 w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
@@ -547,22 +537,15 @@
           </div>
         </div>
 
-        <!-- 1. 학교 접속 비밀번호 요약 카드 -->
-        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border-2 border-slate-200">
-          <div class="flex flex-col gap-1 p-3 bg-white rounded-xl border border-rose-200">
+        <!-- 1. 교사용 관리자 비밀번호 안내 카드 -->
+        <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 flex items-center justify-between">
+          <div class="flex flex-col gap-0.5">
             <span class="text-xs font-bold text-rose-600 flex items-center gap-1">
               <i data-lucide="lock" class="w-3.5 h-3.5"></i> 교사용(관리자) 비밀번호
             </span>
-            <span id="welcomeTeacherPass" class="text-xl font-black font-mono text-slate-900 tracking-wider">7777</span>
-            <span class="text-[11px] text-slate-400">시간표 세팅 및 문제 정정 등록용 (교사만 공유)</span>
+            <span class="text-[11px] text-slate-500">시간표 세팅 및 정정사항 입력용 (선생님들만 공유)</span>
           </div>
-          <div class="flex flex-col gap-1 p-3 bg-white rounded-xl border border-emerald-200">
-            <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">
-              <i data-lucide="monitor" class="w-3.5 h-3.5"></i> 학생(교실 칠판)용 비밀번호
-            </span>
-            <span id="welcomeClassPass" class="text-xl font-black font-mono text-slate-900 tracking-wider">1234</span>
-            <span class="text-[11px] text-slate-400">전자칠판 학생 열람 전용 (학생 조작 차단)</span>
-          </div>
+          <span id="welcomeTeacherPass" class="text-2xl font-black font-mono text-slate-900 tracking-wider bg-white px-4 py-1.5 rounded-xl border border-rose-200">7777</span>
         </div>
 
         <!-- 2. 교실 전달 및 관리자 즐겨찾기 도구 -->

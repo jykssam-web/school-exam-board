@@ -321,15 +321,15 @@ async function handleCreateSchool() {
   const name = document.getElementById('createSchoolName').value.trim();
   const examTitle = document.getElementById('createExamTitle').value.trim() || '2026학년도 2학기 중간고사';
   const teacherPass = document.getElementById('createTeacherPass').value.trim();
-  const classPass = document.getElementById('createClassPass').value.trim();
   const defaultDuration = Number(document.querySelector('input[name="createDuration"]:checked')?.value || 50);
 
   if (!name) {
     alert('학교 이름을 입력해 주세요.');
     return;
   }
-  if (!teacherPass || !classPass) {
-    alert('교사용 비밀번호와 학생(교실)용 비밀번호를 모두 입력해 주세요.');
+  if (!teacherPass) {
+    alert('교사용(관리자) 비밀번호를 입력해 주세요.');
+    document.getElementById('createTeacherPass').focus();
     return;
   }
 
@@ -339,14 +339,8 @@ async function handleCreateSchool() {
     return;
   }
 
-  if (teacherPass === classPass) {
-    alert('교사용 비밀번호와 학생(교실)용 비밀번호는 서로 다르게 입력해야 합니다!\n\n(동일하게 설정하면 학생과 교사 권한을 구분할 수 없습니다.)');
-    document.getElementById('createClassPass').focus();
-    return;
-  }
-
   try {
-    const { ok, data } = await api.createSchool({ region, name, examTitle, defaultDuration, teacherPass, classPass });
+    const { ok, data } = await api.createSchool({ region, name, examTitle, defaultDuration, teacherPass });
     if (!ok) {
       alert(data.error || '개설에 실패했습니다.');
       return;
@@ -357,8 +351,8 @@ async function handleCreateSchool() {
     }
 
     saveRecentSchool(data.school, 'teacher');
-    enterExamBoard(data.school, 'teacher', { classPass, teacherPass });
-    showWelcomeGuideModal(data.school, teacherPass, classPass, data.wasRenamed);
+    enterExamBoard(data.school, 'teacher', { teacherPass });
+    showWelcomeGuideModal(data.school, teacherPass, data.wasRenamed);
   } catch (err) {
     console.error('개설 에러:', err);
     alert('서버와 통신 중 오류가 발생했습니다.');
@@ -366,12 +360,11 @@ async function handleCreateSchool() {
 }
 
 // 개설 완료 환영 모달 팝업
-function showWelcomeGuideModal(school, teacherPass, classPass, wasRenamed) {
+function showWelcomeGuideModal(school, teacherPass, wasRenamed) {
   const modal = document.getElementById('welcomeGuideModal');
   const title = document.getElementById('welcomeSchoolTitle');
   const roomCodeEl = document.getElementById('welcomeRoomCode');
   const tPass = document.getElementById('welcomeTeacherPass');
-  const cPass = document.getElementById('welcomeClassPass');
 
   title.innerText = wasRenamed 
     ? `${school.name} (동명 학교 자동 넘버링 완료)` 
@@ -382,8 +375,7 @@ function showWelcomeGuideModal(school, teacherPass, classPass, wasRenamed) {
     roomCodeEl.innerText = code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code;
   }
 
-  tPass.innerText = teacherPass;
-  cPass.innerText = classPass;
+  if (tPass) tPass.innerText = teacherPass;
 
   modal.classList.remove('hidden');
   if (window.lucide) lucide.createIcons();
@@ -396,19 +388,6 @@ function closeWelcomeGuideModal() {
 function closeWelcomeGuideModalAndOpenSettings() {
   closeWelcomeGuideModal();
   openSettingsModal();
-}
-
-function checkPasswordMismatch() {
-  const teacherPass = document.getElementById('createTeacherPass').value.trim();
-  const classPass = document.getElementById('createClassPass').value.trim();
-  const warning = document.getElementById('passwordMismatchWarning');
-
-  if (teacherPass && classPass && teacherPass === classPass) {
-    warning.classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-  } else {
-    warning.classList.add('hidden');
-  }
 }
 
 async function handleEnterSchool() {
