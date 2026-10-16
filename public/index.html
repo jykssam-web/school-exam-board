@@ -10,7 +10,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@0.468.0"></script>
-  <link rel="stylesheet" href="styles.css?v=20261016_v6">
+  <link rel="stylesheet" href="styles.css?v=20261016_v7">
 </head>
 <body class="light-theme min-h-screen flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200">
 
@@ -125,7 +125,7 @@
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-bold text-slate-700 mb-1.5">우리 학교 이름 <span class="text-rose-500">*</span></label>
-              <input type="text" id="createSchoolName" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="예: 서진중학교 (지역명 제외)">
+              <input type="text" id="createSchoolName" oninput="onSchoolNameInput(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" placeholder="예: 서진중학교 (지역명 제외)">
             </div>
           </div>
 
@@ -134,20 +134,24 @@
             <input type="text" id="createExamTitle" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-blue-600 focus:bg-white" value="2026학년도 2학기 중간고사">
           </div>
 
-          <!-- 학교 구분 (기본 시험시간) -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">학교 구분 (기본 시험시간)</label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-bold text-slate-700">학교 구분 (기본 시험시간) <span class="text-rose-500">*</span></label>
+              <span id="createDurationBadge" class="text-[11px] font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">중학교 45분 시험</span>
+            </div>
+            <input type="hidden" id="createDurationValue" value="45">
+            <input type="radio" name="createDuration" id="createDur45Radio" value="45" class="sr-only" checked>
+            <input type="radio" name="createDuration" id="createDur50Radio" value="50" class="sr-only">
+            
             <div class="grid grid-cols-2 gap-2 text-xs font-bold">
-              <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition shadow-sm">
-                <input type="radio" name="createDuration" value="45" class="hidden">
-                <i data-lucide="school" class="w-4 h-4"></i>
-                <span>중학교 (45분 시험)</span>
-              </label>
-              <label class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition shadow-sm">
-                <input type="radio" name="createDuration" value="50" class="hidden" checked>
-                <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-                <span>고등학교 (50분 시험)</span>
-              </label>
+              <button type="button" id="createDur45Btn" onclick="selectCreateDuration(45)" class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition shadow-sm bg-blue-600 text-white border-blue-600 font-extrabold text-xs cursor-pointer">
+                <i data-lucide="school" class="w-4 h-4 shrink-0"></i>
+                <span class="text-sm font-extrabold tracking-tight">중학교 (45분 시험)</span>
+              </button>
+              <button type="button" id="createDur50Btn" onclick="selectCreateDuration(50)" class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition shadow-xs bg-white text-slate-700 border-slate-300 hover:border-blue-400 hover:bg-slate-50 font-bold text-xs cursor-pointer">
+                <i data-lucide="graduation-cap" class="w-4 h-4 shrink-0 text-slate-500"></i>
+                <span class="text-sm font-bold tracking-tight">고등학교 (50분 시험)</span>
+              </button>
             </div>
           </div>
 
@@ -678,19 +682,19 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">대상 학년 선택</label>
           <div class="grid grid-cols-4 gap-1.5">
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition font-bold text-xs">
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-blue-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white transition font-bold text-xs">
               <input type="radio" name="targetGrade" value="1" class="hidden" checked onchange="onNoticeGradeChange()">
               <span>1학년</span>
             </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-emerald-500 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white transition font-bold text-xs">
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-emerald-500 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white transition font-bold text-xs">
               <input type="radio" name="targetGrade" value="2" class="hidden" onchange="onNoticeGradeChange()">
               <span>2학년</span>
             </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-purple-500 has-[:checked]:bg-purple-600 has-[:checked]:border-purple-600 has-[:checked]:text-white transition font-bold text-xs">
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-purple-500 has-[:checked]:bg-purple-600 has-[:checked]:border-purple-600 has-[:checked]:text-white transition font-bold text-xs">
               <input type="radio" name="targetGrade" value="3" class="hidden" onchange="onNoticeGradeChange()">
               <span>3학년</span>
             </label>
-            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 cursor-pointer hover:border-amber-500 has-[:checked]:bg-amber-600 has-[:checked]:border-amber-600 has-[:checked]:text-white transition font-bold text-xs">
+            <label class="flex items-center justify-center py-2 px-1 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:border-amber-500 has-[:checked]:bg-amber-600 has-[:checked]:border-amber-600 has-[:checked]:text-white transition font-bold text-xs">
               <input type="radio" name="targetGrade" value="all" class="hidden" onchange="onNoticeGradeChange()">
               <span>전학년</span>
             </label>
@@ -931,7 +935,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="api.js?v=20261016_v6"></script>
-  <script src="app.js?v=20261016_v6"></script>
+  <script src="api.js?v=20261016_v7"></script>
+  <script src="app.js?v=20261016_v7"></script>
 </body>
 </html>

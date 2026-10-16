@@ -195,8 +195,58 @@ function switchLobbyTab(tab) {
     createTab.classList.remove('hidden');
     createBtn.className = "py-2.5 rounded-xl transition bg-emerald-600 text-white shadow-md flex items-center justify-center gap-1";
     setTimeout(() => document.getElementById('createSchoolName')?.focus(), 50);
+    const curVal = document.getElementById('createDurationValue')?.value || 45;
+    selectCreateDuration(curVal);
   }
   if (window.lucide) lucide.createIcons();
+}
+
+// 🏫 학교 개설 시 기본 시험시간 (45분/50분) 선택 및 UI 업데이트
+function selectCreateDuration(mins) {
+  const dur = Number(mins) === 50 ? 50 : 45;
+  const hiddenVal = document.getElementById('createDurationValue');
+  const radio45 = document.getElementById('createDur45Radio');
+  const radio50 = document.getElementById('createDur50Radio');
+  const btn45 = document.getElementById('createDur45Btn');
+  const btn50 = document.getElementById('createDur50Btn');
+  const badge = document.getElementById('createDurationBadge');
+
+  if (hiddenVal) hiddenVal.value = dur;
+  if (radio45) radio45.checked = (dur === 45);
+  if (radio50) radio50.checked = (dur === 50);
+
+  const activeClass = "flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition shadow-sm bg-blue-600 text-white border-blue-600 font-extrabold text-xs cursor-pointer";
+  const inactiveClass = "flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition shadow-xs bg-white text-slate-700 border-slate-300 hover:border-blue-400 hover:bg-slate-50 font-bold text-xs cursor-pointer";
+
+  if (btn45 && btn50) {
+    if (dur === 45) {
+      btn45.className = activeClass;
+      btn50.className = inactiveClass;
+    } else {
+      btn45.className = inactiveClass;
+      btn50.className = activeClass;
+    }
+  }
+
+  if (badge) {
+    badge.innerText = dur === 45 ? '중학교 45분 시험' : '고등학교 50분 시험';
+    badge.className = dur === 45
+      ? 'text-[11px] font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200'
+      : 'text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// 🏫 학교 이름 입력 시 "중학교" / "고등학교" 자동 감지 편의기능
+function onSchoolNameInput(val) {
+  if (!val) return;
+  const t = val.trim();
+  if (t.includes('중학') || t.endsWith('중')) {
+    selectCreateDuration(45);
+  } else if (t.includes('고등') || t.endsWith('고')) {
+    selectCreateDuration(50);
+  }
 }
 
 // 6자리 숫자 입력 시 자동 인증 헬퍼
@@ -365,7 +415,11 @@ async function handleCreateSchool() {
   const name = document.getElementById('createSchoolName').value.trim();
   const examTitle = document.getElementById('createExamTitle').value.trim() || '2026학년도 2학기 중간고사';
   const teacherPass = document.getElementById('createTeacherPass').value.trim();
-  const defaultDuration = Number(document.querySelector('input[name="createDuration"]:checked')?.value || 50);
+  const defaultDuration = Number(
+    document.getElementById('createDurationValue')?.value ||
+    document.querySelector('input[name="createDuration"]:checked')?.value ||
+    45
+  );
 
   if (!name) {
     alert('학교 이름을 입력해 주세요.');
